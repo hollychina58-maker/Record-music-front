@@ -1,0 +1,364 @@
+/* Ink Wash Theme v2.0 - Ethereal, Dynamic, Animated */
+/* 水墨画风格 + 现代动效 - 飘渺、灵动、烟雾流动感 */
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;600&family=ZCOOL+XiaoWei&family=Noto+Naskh+Arabic:wght@400;600&family=Noto+Sans:wght@300;400;600&display=swap');
+
+:root {
+  /* Primary Colors - Ink Palette */
+  --ink-deep: #0a0a0a;
+  --ink-black: #1a1a1a;
+  --ink-dark: #2d2d2d;
+  --ink-medium: #4a4a4a;
+  --ink-light: #7a7a7a;
+  --ink-wash: #a8a8a8;
+
+  /* Paper Colors */
+  --paper-white: #fafafa;
+  --paper-cream: #f5f3ed;
+  --paper-aged: #e8e4dc;
+  --paper-mist: rgba(245, 243, 237, 0.85);
+
+  /* Accent - Ember & Flame */
+  --ember-orange: #e85a2c;
+  --ember-red: #c43c26;
+  --ember-glow: #ff6b35;
+  --flame-yellow: #f5a623;
+  --flame-gold: #ffc107;
+
+  /* Typography */
+  --font-ink: 'Noto Serif SC', 'ZCOOL XiaoWei', 'Songti SC', 'SimSun', serif;
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-bold: 600;
+
+  /* Font Sizes */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+
+  /* Spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* Border Radius */
+  --radius-sm: 2px;
+  --radius-md: 6px;
+  --radius-lg: 12px;
+  --radius-xl: 20px;
+
+  /* Shadows - Ink Wash Style */
+  --shadow-mist: 0 4px 20px rgba(26, 26, 26, 0.06);
+  --shadow-float: 0 12px 40px rgba(26, 26, 26, 0.12);
+  --shadow-ink-light: 0 2px 8px rgba(26, 26, 26, 0.08);
+  --shadow-ink-medium: 0 6px 24px rgba(26, 26, 26, 0.15);
+  --shadow-ink-dark: 0 12px 48px rgba(26, 26, 26, 0.25);
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 300ms ease;
+  --transition-slow: 600ms ease;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-drift: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+  /* Z-Index Scale */
+  --z-bg: 0;
+  --z-base: 1;
+  --z-elevated: 10;
+  --z-float: 100;
+  --z-overlay: 200;
+  --z-modal: 300;
+  --z-smoke: -1;
+}
+
+/* ============================================
+   CSS KEYFRAME ANIMATIONS
+   ============================================ */
+
+/* Mist/Smoke Floating Animation */
+@keyframes mistFloat {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.4;
+  }
+  25% {
+    transform: translate(15px, -20px) scale(1.05);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translate(-10px, -35px) scale(0.95);
+    opacity: 0.5;
+  }
+  75% {
+    transform: translate(20px, -15px) scale(1.08);
+    opacity: 0.55;
+  }
+}
+
+/* Ink Blob Morphing */
+@keyframes inkMorph {
+  0%, 100% {
+    border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+    transform: translate(0, 0) rotate(0deg);
+  }
+  25% {
+    border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%;
+    transform: translate(20px, -10px) rotate(5deg);
+  }
+  50% {
+    border-radius: 50% 60% 30% 60% / 30% 40% 70% 60%;
+    transform: translate(-15px, 15px) rotate(-3deg);
+  }
+  75% {
+    border-radius: 40% 30% 60% 50% / 60% 40% 30% 50%;
+    transform: translate(10px, 20px) rotate(2deg);
+  }
+}
+
+/* Fade In Up - for card entrances */
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Fade In Scale */
+@keyframes fadeInScale {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Ink Spread - for hover effects */
+@keyframes inkSpread {
+  0% {
+    transform: scale(0);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+/* Ripple Effect */
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* Float Animation - gentle hovering */
+@keyframes floatGentle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+/* Glow Pulse */
+@keyframes glowPulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(232, 90, 44, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(232, 90, 44, 0.6);
+  }
+}
+
+/* Waveform Animation */
+@keyframes waveform {
+  0%, 100% {
+    height: 20%;
+  }
+  50% {
+    height: 100%;
+  }
+}
+
+/* Smoke Drift - for background atmosphere */
+@keyframes smokeDrift {
+  0% {
+    transform: translateX(-100%) translateY(0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.15;
+  }
+  90% {
+    opacity: 0.15;
+  }
+  100% {
+    transform: translateX(100%) translateY(-50px) rotate(10deg);
+    opacity: 0;
+  }
+}
+
+/* Ash Float Up */
+@keyframes ashFloat {
+  0% {
+    transform: translateY(0) translateX(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-150px) translateX(30px) rotate(180deg);
+    opacity: 0;
+  }
+}
+
+/* Page Transition - ink reveal */
+@keyframes inkReveal {
+  0% {
+    clip-path: inset(0 100% 0 0);
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* Text Gradient Flow */
+@keyframes gradientFlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Burning Edge Creep */
+@keyframes burnCreep {
+  0% {
+    clip-path: polygon(0 100%, 100% 100%, 100% 100%, 0 100%);
+  }
+  50% {
+    clip-path: polygon(0 100%, 100% 100%, 100% 60%, 0 75%);
+  }
+  100% {
+    clip-path: polygon(0 100%, 100% 100%, 100% 0%, 0 0%);
+  }
+}
+
+/* Particle Drift */
+@keyframes particleDrift {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateY(-50vh) scale(0.5);
+    opacity: 0.4;
+  }
+  100% {
+    transform: translateY(-100vh) scale(0.1);
+    opacity: 0;
+  }
+}
+
+/* ============================================
+   GLOBAL STYLES
+   ============================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-ink);
+  color: var(--ink-black);
+  background: linear-gradient(
+    135deg,
+    var(--paper-white) 0%,
+    var(--paper-cream) 50%,
+    var(--paper-aged) 100%
+  );
+  line-height: 1.7;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Ink Wash Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    to bottom,
+    var(--ink-wash),
+    var(--ink-light)
+  );
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-medium);
+}
+
+/* Selection Style */
+::selection {
+  background: rgba(26, 26, 26, 0.15);
+  color: var(--ink-deep);
+}
+
+/* Focus Styles */
+:focus-visible {
+  outline: 2px solid var(--ink-medium);
+  outline-offset: 2px;
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

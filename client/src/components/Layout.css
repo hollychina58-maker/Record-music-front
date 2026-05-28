@@ -1,0 +1,113 @@
+.app-layout {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.global-nav {
+  background: #1a1a1a;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.global-nav-inner {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-brand {
+  font-family: "Noto Serif SC", serif;
+  font-size: 1.1rem;
+  color: #e8dcc8;
+  text-decoration: none;
+  letter-spacing: 0.12em;
+  flex-shrink: 0;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nav-link {
+  padding: 6px 14px;
+  color: #999;
+  text-decoration: none;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  border-radius: 2px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.nav-link:hover {
+  color: #e8dcc8;
+}
+
+.nav-link-admin {
+  color: #c9a96e;
+}
+.nav-link-admin:hover {
+  color: #deb870;
+}
+
+.nav-user {
+  color: #bbb;
+  font-size: 0.78rem;
+  margin-left: 12px;
+  letter-spacing: 0.04em;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-logout-btn {
+  margin-left: 8px;
+  padding: 4px 12px;
+  background: transparent;
+  border: 1px solid #444;
+  border-radius: 2px;
+  color: #888;
+  font-size: 0.72rem;
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: 0.04em;
+  transition: all 0.2s;
+}
+
+.nav-logout-btn:hover {
+  color: #ccc;
+  border-color: #666;
+}
+
+.app-content {
+  flex: 1;
+}
+
+@media (max-width: 640px) {
+  .global-nav-inner {
+    padding: 0 12px;
+  }
+
+  .nav-link {
+    padding: 4px 8px;
+    font-size: 0.72rem;
+  }
+
+  .nav-user {
+    display: none;
+  }
+
+  .nav-logout-btn {
+    font-size: 0.68rem;
+    padding: 4px 8px;
+  }
+}

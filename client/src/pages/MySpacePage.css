@@ -1,0 +1,317 @@
+/* MySpacePage — 我的空间 */
+.myspace-page {
+  min-height: 100dvh;
+  background: #f8f4ee;
+  padding-bottom: 40px;
+}
+
+/* Profile card */
+.profile-card {
+  margin: 0 20px;
+  padding: 24px;
+  background: #fff;
+  border-radius: 2px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03), 0 4px 16px rgba(0,0,0,0.04);
+}
+
+.profile-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.profile-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-name {
+  font-family: "Noto Serif SC", serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.profile-badge {
+  font-family: inherit;
+  font-size: 0.65rem;
+  font-weight: 400;
+  padding: 1px 8px;
+  border-radius: 2px;
+  letter-spacing: 0.05em;
+}
+
+.badge--monthly {
+  background: #f0ebe0;
+  color: #8b7355;
+}
+
+.badge--yearly {
+  background: #1a1a1a;
+  color: #f5f0e8;
+}
+
+.profile-bio {
+  font-size: 0.82rem;
+  color: #999;
+  margin: 8px 0 0;
+  line-height: 1.6;
+}
+
+.profile-edit-btn {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: #bbb;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: color 0.3s, background 0.3s;
+}
+
+.profile-edit-btn:hover {
+  color: #1a1a1a;
+  background: rgba(0,0,0,0.04);
+}
+
+/* Edit form */
+.profile-edit-form {
+  margin-top: 12px;
+}
+
+.profile-edit-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #e0d8cc;
+  border-radius: 2px;
+  font-size: 0.9rem;
+  font-family: "Noto Serif SC", serif;
+  color: #1a1a1a;
+  background: #fafaf8;
+  outline: none;
+  transition: border-color 0.3s;
+  margin-bottom: 8px;
+}
+
+.profile-edit-input:focus,
+.profile-edit-textarea:focus {
+  border-color: #bbb;
+}
+
+.profile-edit-textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #e0d8cc;
+  border-radius: 2px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  color: #1a1a1a;
+  background: #fafaf8;
+  outline: none;
+  resize: vertical;
+  transition: border-color 0.3s;
+}
+
+.profile-edit-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.profile-save-btn {
+  padding: 6px 20px;
+  background: #1a1a1a;
+  color: #f5f0e8;
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-family: inherit;
+  letter-spacing: 0.05em;
+  transition: background 0.3s;
+}
+
+.profile-save-btn:hover { background: #333; }
+.profile-save-btn:disabled { opacity: 0.5; cursor: default; }
+
+.profile-cancel-btn {
+  padding: 6px 16px;
+  background: transparent;
+  color: #999;
+  border: 1px solid #ddd;
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-family: inherit;
+  transition: color 0.3s;
+}
+
+.profile-cancel-btn:hover { color: #1a1a1a; }
+
+/* Stats row */
+.profile-stats-row {
+  display: flex;
+  gap: 24px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(0,0,0,0.05);
+}
+
+.profile-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.profile-stat-num {
+  font-family: "Noto Serif SC", serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.profile-stat-label {
+  font-size: 0.7rem;
+  color: #aaa;
+  letter-spacing: 0.05em;
+}
+
+/* Subscription row */
+.profile-subscription {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0,0,0,0.04);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sub-badge {
+  font-size: 0.72rem;
+  padding: 2px 10px;
+  background: #f0ebe0;
+  color: #8b7355;
+  border-radius: 2px;
+  letter-spacing: 0.05em;
+}
+
+.sub-expiry {
+  font-size: 0.75rem;
+  color: #aaa;
+}
+
+/* Tabs */
+.myspace-tabs {
+  display: flex;
+  gap: 0;
+  margin: 24px 20px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+
+.myspace-tab {
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-size: 0.85rem;
+  font-family: "Noto Serif SC", serif;
+  color: #aaa;
+  cursor: pointer;
+  letter-spacing: 0.06em;
+  transition: color 0.3s, border-color 0.3s;
+  margin-bottom: -1px;
+}
+
+.myspace-tab:hover { color: #666; }
+
+.myspace-tab--active {
+  color: #1a1a1a;
+  border-bottom-color: #1a1a1a;
+}
+
+/* Content */
+.myspace-content {
+  padding: 24px 20px;
+}
+
+.myspace-grid {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* Stats panel */
+.stats-panel {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.stat-card {
+  background: #fff;
+  padding: 20px 12px;
+  border-radius: 2px;
+  text-align: center;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03), 0 2px 8px rgba(0,0,0,0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stat-card-num {
+  font-family: "Noto Serif SC", serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.stat-card-label {
+  font-size: 0.72rem;
+  color: #aaa;
+  letter-spacing: 0.05em;
+}
+
+/* Loading */
+.loading {
+  display: flex;
+  justify-content: center;
+  padding: 100px 0;
+  font-family: "Noto Serif SC", serif;
+  font-size: 1rem;
+  color: #bbb;
+}
+
+/* Empty state — reuses HomePage styles */
+
+@media (max-width: 480px) {
+  .profile-card {
+    margin: 0 12px;
+    padding: 18px;
+  }
+
+  .myspace-tabs {
+    margin: 20px 12px 0;
+  }
+
+  .myspace-content {
+    padding: 20px 12px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+}

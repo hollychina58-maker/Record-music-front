@@ -1,0 +1,236 @@
+/* PaymentPage — 商品/服务页 */
+.payment-page {
+  min-height: 100dvh;
+  background: #f8f4ee;
+}
+
+/* Page header */
+.payment-page .page-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 20px;
+  position: relative;
+  margin-top: 0;
+}
+
+.payment-page .back-btn {
+  position: absolute;
+  left: 16px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #666;
+}
+
+.payment-page .back-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.payment-page .page-title {
+  font-family: "Noto Serif SC", serif;
+  font-size: 1rem;
+  color: #1a1a1a;
+  letter-spacing: 0.1em;
+  margin: 0;
+}
+
+.payment-content {
+  padding: 0 20px 60px;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* Current plan */
+.current-plan {
+  text-align: center;
+}
+
+.current-plan-title {
+  font-family: "Noto Serif SC", serif;
+  font-size: 0.9rem;
+  color: #999;
+  margin: 0 0 12px;
+  letter-spacing: 0.08em;
+}
+
+.current-plan-card {
+  background: #fff;
+  padding: 20px;
+  border-radius: 2px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03), 0 4px 16px rgba(0,0,0,0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.current-plan-name {
+  font-family: "Noto Serif SC", serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.current-plan-detail {
+  font-size: 0.78rem;
+  color: #999;
+}
+
+.show-all-btn {
+  display: inline-block;
+  margin-top: 20px;
+  padding: 8px 24px;
+  background: transparent;
+  border: 1px solid #ccc;
+  border-radius: 2px;
+  color: #888;
+  font-size: 0.82rem;
+  font-family: inherit;
+  cursor: pointer;
+  letter-spacing: 0.06em;
+  transition: all 0.3s;
+}
+
+.show-all-btn:hover {
+  color: #1a1a1a;
+  border-color: #1a1a1a;
+}
+
+.section-hint {
+  text-align: center;
+  font-size: 0.82rem;
+  color: #bbb;
+  margin: 0 0 16px;
+  letter-spacing: 0.06em;
+}
+
+/* Plans grid */
+.plans-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 0 0 20px;
+}
+
+.plan-card {
+  background: #fff;
+  padding: 24px 20px;
+  border-radius: 2px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03), 0 4px 16px rgba(0,0,0,0.04);
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: border-color 0.3s, transform 0.3s;
+  text-align: center;
+}
+
+.plan-card:hover {
+  transform: translateY(-2px);
+}
+
+.plan-card--selected {
+  border-color: #1a1a1a;
+}
+
+.plan-name {
+  font-family: "Noto Serif SC", serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 4px;
+  letter-spacing: 0.06em;
+}
+
+.plan-desc {
+  font-size: 0.8rem;
+  color: #999;
+  margin: 0 0 12px;
+}
+
+.plan-price {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 2px;
+  margin-bottom: 6px;
+}
+
+.plan-currency {
+  font-size: 0.9rem;
+  color: #666;
+  font-family: "Noto Serif SC", serif;
+}
+
+.plan-amount {
+  font-family: "Noto Serif SC", serif;
+  font-size: 2rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  line-height: 1;
+}
+
+.plan-period {
+  font-size: 0.82rem;
+  color: #999;
+  font-family: "Noto Serif SC", serif;
+}
+
+.plan-limit {
+  font-size: 0.78rem;
+  color: #aaa;
+  letter-spacing: 0.04em;
+}
+
+/* Checkout button */
+.checkout-btn {
+  display: block;
+  width: 100%;
+  padding: 14px 0;
+  background: #1a1a1a;
+  color: #f5f0e8;
+  border: none;
+  border-radius: 2px;
+  font-size: 0.95rem;
+  font-family: "Noto Serif SC", serif;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.2s;
+}
+
+.checkout-btn:hover {
+  background: #333;
+}
+
+.checkout-btn:active {
+  transform: scale(0.98);
+}
+
+.checkout-btn:disabled {
+  background: #ccc;
+  cursor: default;
+}
+
+.checkout-btn:disabled:active {
+  transform: none;
+}
+
+/* Loading */
+.payment-page .loading {
+  display: flex;
+  justify-content: center;
+  padding: 100px 0;
+  font-family: "Noto Serif SC", serif;
+  font-size: 1rem;
+  color: #bbb;
+}
+
+@media (max-width: 480px) {
+  .payment-content {
+    padding: 0 12px 60px;
+  }
+}

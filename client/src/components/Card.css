@@ -1,0 +1,224 @@
+/* Card v2.0 - Float Hover + Ink Edge + Fade-In */
+/* 悬停上浮 + 墨迹边缘 + 淡入动画 */
+
+.ink-card {
+  position: relative;
+  padding: var(--space-6);
+  background: var(--paper-cream);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-slow) var(--ease-out-expo);
+  animation: fadeInUp 0.6s var(--ease-out-expo) forwards;
+  opacity: 0;
+}
+
+/* Ink Edge Decoration */
+.ink-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: var(--radius-lg);
+  border: 1px solid transparent;
+  background: linear-gradient(
+    135deg,
+    var(--ink-wash) 0%,
+    transparent 50%,
+    transparent 100%
+  ) border-box;
+  mask: linear-gradient(#fff 0 0) padding-box,
+        linear-gradient(#fff 0 0);
+  mask-composite: xor;
+  -webkit-mask: linear-gradient(#fff 0 0) padding-box,
+               linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+
+.ink-card:hover::before {
+  opacity: 0.6;
+}
+
+/* Ink Bleed Effect on Hover */
+.ink-card::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border-radius: calc(var(--radius-lg) + 2px);
+  background: linear-gradient(
+    135deg,
+    rgba(26, 26, 26, 0.1) 0%,
+    transparent 30%,
+    transparent 70%,
+    rgba(26, 26, 26, 0.08) 100%
+  );
+  opacity: 0;
+  transform: translateY(10px);
+  filter: blur(20px);
+  transition: all var(--transition-slow) var(--ease-out-expo);
+  z-index: -1;
+}
+
+.ink-card:hover::after {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ============================================
+   VARIANTS
+   ============================================ */
+
+/* Default - Light Paper */
+.ink-card--default {
+  box-shadow: var(--shadow-mist);
+  border: 1px solid rgba(26, 26, 26, 0.06);
+}
+
+.ink-card--default:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-float);
+  border-color: rgba(26, 26, 26, 0.1);
+}
+
+/* Elevated - More Depth */
+.ink-card--elevated {
+  box-shadow: var(--shadow-ink-medium);
+  border: 1px solid rgba(26, 26, 26, 0.08);
+}
+
+.ink-card--elevated:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-ink-dark);
+}
+
+/* Ghost - Minimal */
+.ink-card--ghost {
+  background: transparent;
+  box-shadow: none;
+  border: 1px solid rgba(26, 26, 26, 0.1);
+}
+
+.ink-card--ghost:hover {
+  background: var(--paper-cream);
+  transform: translateY(-4px);
+}
+
+/* ============================================
+   CONTENT STYLES
+   ============================================ */
+
+/* Title */
+.ink-card__title {
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--ink-deep);
+  margin-bottom: var(--space-3);
+  letter-spacing: 0.05em;
+  line-height: 1.4;
+  position: relative;
+}
+
+/* Ink underline for title */
+.ink-card__title::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    var(--ink-medium),
+    transparent
+  );
+  transition: width var(--transition-normal) var(--ease-out-expo);
+}
+
+.ink-card:hover .ink-card__title::after {
+  width: 60%;
+}
+
+/* Content */
+.ink-card__content {
+  font-size: var(--text-base);
+  color: var(--ink-medium);
+  line-height: 1.8;
+}
+
+/* Body */
+.ink-card__body {
+  margin-top: var(--space-6);
+}
+
+/* Meta Info */
+.ink-card__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid rgba(26, 26, 26, 0.06);
+}
+
+.ink-card__date {
+  font-size: var(--text-xs);
+  color: var(--ink-light);
+  letter-spacing: 0.05em;
+}
+
+.ink-card__tag {
+  font-size: var(--text-xs);
+  color: var(--ink-wash);
+  padding: var(--space-1) var(--space-2);
+  background: rgba(26, 26, 26, 0.04);
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.05em;
+}
+
+/* ============================================
+   CARD ANIMATION STATES
+   ============================================ */
+
+/* Entrance Animation */
+.ink-card--enter {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.ink-card--enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: all 0.5s var(--ease-out-expo);
+}
+
+/* Hover Lift Effect */
+.ink-card--lift {
+  cursor: pointer;
+}
+
+.ink-card--lift:hover {
+  transform: translateY(-8px) scale(1.02);
+}
+
+/* Press Effect */
+.ink-card--lift:active {
+  transform: translateY(-4px) scale(0.99);
+}
+
+/* ============================================
+   STAGGER DELAYS FOR LIST ANIMATIONS
+   ============================================ */
+
+.ink-card:nth-child(1) { animation-delay: 0s; }
+.ink-card:nth-child(2) { animation-delay: 0.1s; }
+.ink-card:nth-child(3) { animation-delay: 0.2s; }
+.ink-card:nth-child(4) { animation-delay: 0.3s; }
+.ink-card:nth-child(5) { animation-delay: 0.4s; }
+.ink-card:nth-child(6) { animation-delay: 0.5s; }
+.ink-card:nth-child(7) { animation-delay: 0.6s; }
+.ink-card:nth-child(8) { animation-delay: 0.7s; }

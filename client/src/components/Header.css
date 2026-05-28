@@ -1,0 +1,228 @@
+/* Header v2.0 - Frosted Glass + Dynamic Divider */
+/* 毛玻璃效果 + 动态分隔线 */
+
+.ink-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-6);
+  background: var(--paper-mist);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(26, 26, 26, 0.06);
+  z-index: var(--z-float);
+}
+
+/* Dynamic Ink Divider */
+.ink-header__divider {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--ink-wash) 15%,
+    var(--ink-light) 30%,
+    var(--ink-medium) 50%,
+    var(--ink-light) 70%,
+    var(--ink-wash) 85%,
+    transparent 100%
+  );
+  opacity: 0;
+  animation: fadeIn 1s var(--ease-out-expo) 0.3s forwards;
+}
+
+@keyframes fadeIn {
+  to { opacity: 0.6; }
+}
+
+/* Ink Flow Animation on Divider */
+.ink-header__divider::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.8),
+    transparent
+  );
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+/* Header Sections */
+.ink-header__left,
+.ink-header__right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.ink-header__right {
+  justify-content: flex-end;
+}
+
+.ink-header__center {
+  flex: 2;
+  display: flex;
+  justify-content: center;
+}
+
+/* Title */
+.ink-header__title {
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-normal);
+  color: var(--ink-deep);
+  letter-spacing: 0.25em;
+  text-align: center;
+  position: relative;
+  animation: fadeInUp 0.6s var(--ease-out-expo);
+}
+
+/* Title Decoration - Ink Dots */
+.ink-header__title::before,
+.ink-header__title::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  background: var(--ink-medium);
+  border-radius: 50%;
+  transform: translateY(-50%);
+  opacity: 0.4;
+}
+
+.ink-header__title::before {
+  left: -16px;
+  animation: floatGentle 3s ease-in-out infinite;
+}
+
+.ink-header__title::after {
+  right: -16px;
+  animation: floatGentle 3s ease-in-out infinite;
+  animation-delay: -1.5s;
+}
+
+/* Back Button */
+.ink-header__back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--ink-medium);
+  transition: all var(--transition-normal) var(--ease-out-expo);
+}
+
+.ink-header__back:hover {
+  background: rgba(26, 26, 26, 0.05);
+  border-color: var(--ink-wash);
+  color: var(--ink-deep);
+  transform: translateX(-2px);
+}
+
+.ink-header__back:active {
+  transform: translateX(0) scale(0.95);
+}
+
+.ink-header__back svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Action Buttons */
+.ink-header__action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--ink-medium);
+  transition: all var(--transition-fast) var(--ease-out-expo);
+  position: relative;
+}
+
+.ink-header__action::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--ink-deep);
+  transform: scale(0);
+  opacity: 0;
+  transition: all var(--transition-normal) var(--ease-out-expo);
+}
+
+.ink-header__action:hover::before {
+  transform: scale(1);
+  opacity: 0.08;
+}
+
+.ink-header__action:hover {
+  color: var(--ink-deep);
+}
+
+.ink-header__action:active {
+  transform: scale(0.92);
+}
+
+.ink-header__action svg {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Hover underline animation for nav items */
+.ink-header__nav-item {
+  position: relative;
+  padding: var(--space-2) var(--space-3);
+  color: var(--ink-medium);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  letter-spacing: 0.1em;
+  transition: color var(--transition-fast);
+}
+
+.ink-header__nav-item::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 1px;
+  background: var(--ink-medium);
+  transition: all var(--transition-normal) var(--ease-out-expo);
+  transform: translateX(-50%);
+}
+
+.ink-header__nav-item:hover {
+  color: var(--ink-deep);
+}
+
+.ink-header__nav-item:hover::after {
+  width: 100%;
+}
