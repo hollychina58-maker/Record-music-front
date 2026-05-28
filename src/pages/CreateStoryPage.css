@@ -1,0 +1,540 @@
+/* CreateStoryPage v2.0 - Frosted Glass Inputs + Voice Ripple */
+/* 毛玻璃输入框 + 语音波纹动效 */
+
+.create-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding-top: 60px;
+  position: relative;
+}
+
+/* ============================================
+   PAGE HEADER
+   ============================================ */
+
+.create-page .page-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4) var(--space-6);
+  background: var(--paper-mist);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(26, 26, 26, 0.06);
+  position: sticky;
+  top: 60px;
+  z-index: var(--z-elevated);
+}
+
+.create-page .back-btn {
+  position: absolute;
+  left: var(--space-4);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--ink-medium);
+  transition: all var(--transition-fast) var(--ease-out-expo);
+}
+
+.create-page .back-btn:hover {
+  background: rgba(26, 26, 26, 0.05);
+  border-color: var(--ink-wash);
+  color: var(--ink-deep);
+  transform: translateX(-2px);
+}
+
+.create-page .back-btn:active {
+  transform: translateX(0) scale(0.95);
+}
+
+.create-page .back-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.create-page .page-title {
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-normal);
+  letter-spacing: 0.3em;
+  color: var(--ink-deep);
+  animation: fadeIn 0.5s var(--ease-out-expo);
+}
+
+/* ============================================
+   FORM CONTAINER
+   ============================================ */
+
+.form-container {
+  flex: 1;
+  max-width: 700px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6);
+  width: 100%;
+}
+
+.story-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+/* ============================================
+   FORM GROUPS
+   ============================================ */
+
+.form-group {
+  position: relative;
+}
+
+/* ============================================
+   TITLE INPUT - Ink Brush Style
+   ============================================ */
+
+.title-input {
+  width: 100%;
+  padding: var(--space-4) 0;
+  font-family: var(--font-ink);
+  font-size: var(--text-2xl);
+  font-weight: var(--font-weight-normal);
+  color: var(--ink-deep);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(26, 26, 26, 0.12);
+  letter-spacing: 0.05em;
+  transition: all var(--transition-normal) var(--ease-out-expo);
+}
+
+.title-input::placeholder {
+  color: var(--ink-wash);
+  font-weight: var(--font-weight-light);
+}
+
+.title-input:focus {
+  outline: none;
+  border-bottom-color: var(--ink-medium);
+}
+
+/* Focus glow effect */
+.title-input:focus::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--ink-medium), transparent);
+  animation: focusGlow 2s ease-in-out infinite;
+}
+
+@keyframes focusGlow {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
+
+/* ============================================
+   CONTENT TEXTAREA - Paper Style
+   ============================================ */
+
+.textarea-wrapper {
+  position: relative;
+}
+
+.content-textarea {
+  width: 100%;
+  min-height: 300px;
+  padding: var(--space-6);
+  font-family: var(--font-ink);
+  font-size: var(--text-base);
+  line-height: 2;
+  color: var(--ink-dark);
+  background: var(--paper-mist);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(26, 26, 26, 0.08);
+  border-radius: var(--radius-lg);
+  resize: none;
+  letter-spacing: 0.02em;
+  transition: all var(--transition-normal) var(--ease-out-expo);
+  box-shadow: inset 0 2px 8px rgba(26, 26, 26, 0.03);
+}
+
+.content-textarea::placeholder {
+  color: var(--ink-light);
+  font-style: italic;
+}
+
+.content-textarea:focus {
+  outline: none;
+  border-color: var(--ink-wash);
+  box-shadow:
+    inset 0 2px 8px rgba(26, 26, 26, 0.03),
+    0 0 30px rgba(26, 26, 26, 0.05);
+}
+
+/* Paper texture overlay */
+.textarea-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: var(--radius-lg);
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.02;
+  pointer-events: none;
+}
+
+/* ============================================
+   VOICE INPUT WRAPPER
+   ============================================ */
+
+.voice-input-wrapper {
+  position: absolute;
+  bottom: var(--space-4);
+  right: var(--space-4);
+}
+
+/* Voice Input Active - Ripple Animation */
+.voice-input-wrapper--active {
+  animation: voicePulse 1.5s ease-in-out infinite;
+}
+
+@keyframes voicePulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+/* Voice Waveform Rings */
+.voice-rings {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.voice-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--ink-medium);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+}
+
+.voice-input-wrapper--active .voice-ring {
+  animation: voiceRing 2s ease-out infinite;
+}
+
+.voice-ring:nth-child(1) { animation-delay: 0s; }
+.voice-ring:nth-child(2) { animation-delay: 0.4s; }
+.voice-ring:nth-child(3) { animation-delay: 0.8s; }
+
+@keyframes voiceRing {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0.6;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(3);
+    opacity: 0;
+  }
+}
+
+/* ============================================
+   MUSIC OPTION
+   ============================================ */
+
+.music-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-ink);
+  font-size: var(--text-sm);
+  color: var(--ink-medium);
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.music-toggle:hover {
+  color: var(--ink-deep);
+}
+
+.music-toggle.disabled {
+  color: var(--ink-light);
+  cursor: not-allowed;
+}
+
+.music-toggle input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--ink-deep);
+  cursor: pointer;
+}
+
+.music-toggle input[type="checkbox"]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.inline-purchase-link {
+  font-size: var(--text-xs);
+  color: var(--ember-orange);
+  text-underline-offset: 2px;
+  margin-left: var(--space-1);
+}
+
+.music-status {
+  font-family: var(--font-ink);
+  font-size: var(--text-sm);
+  color: var(--ink-medium);
+  text-align: center;
+  animation: fadeIn 0.4s var(--ease-out-expo);
+}
+
+/* ============================================
+   MUSIC OPTIONS (Type / Mood / Genre)
+   ============================================ */
+
+.music-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(26, 26, 26, 0.06);
+  border-radius: var(--radius-md);
+  animation: fadeIn 0.4s var(--ease-out-expo);
+}
+
+.music-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.music-option label {
+  font-family: var(--font-ink);
+  font-size: var(--text-sm);
+  color: var(--ink-medium);
+  white-space: nowrap;
+  min-width: 64px;
+}
+
+.music-option select {
+  flex: 1;
+  max-width: 200px;
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--font-ink);
+  font-size: var(--text-sm);
+  color: var(--ink-deep);
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(26, 26, 26, 0.12);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23555' stroke-width='1.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 32px;
+  transition: all var(--transition-fast) var(--ease-out-expo);
+}
+
+.music-option select:focus {
+  outline: none;
+  border-color: var(--ink-medium);
+  box-shadow: 0 0 0 2px rgba(26, 26, 26, 0.06);
+}
+
+/* ============================================
+   FORM ACTIONS
+   ============================================ */
+
+.form-actions {
+  display: flex;
+  justify-content: center;
+  padding-top: var(--space-4);
+}
+
+/* ============================================
+   SUBMIT BUTTON - Ink Spread Effect
+   ============================================ */
+
+.submit-btn {
+  position: relative;
+  padding: var(--space-4) var(--space-12);
+  font-family: var(--font-ink);
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-normal);
+  letter-spacing: 0.25em;
+  color: var(--paper-white);
+  background: var(--ink-deep);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  overflow: hidden;
+  transition: all var(--transition-normal) var(--ease-out-expo);
+}
+
+/* Ink spread effect on hover */
+.submit-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.2) 0%,
+    transparent 70%
+  );
+  transform: translate(-50%, -50%);
+  transition: all var(--transition-slow) var(--ease-out-expo);
+}
+
+.submit-btn:hover::before {
+  width: 300%;
+  height: 300%;
+}
+
+/* Shine sweep effect */
+.submit-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.15),
+    transparent
+  );
+  transition: left var(--transition-slow) var(--ease-out-expo);
+}
+
+.submit-btn:hover::after {
+  left: 100%;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: var(--ink-dark);
+  box-shadow: 0 8px 30px rgba(26, 26, 26, 0.3);
+  transform: translateY(-2px);
+}
+
+.submit-btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+}
+
+.submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.submit-btn__text {
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================
+   FORM VALIDATION HINTS
+   ============================================ */
+
+.form-hint {
+  font-size: var(--text-xs);
+  color: var(--ink-light);
+  margin-top: var(--space-2);
+  letter-spacing: 0.05em;
+  animation: fadeInUp 0.3s var(--ease-out-expo);
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 640px) {
+  .form-container {
+    padding: var(--space-6) var(--space-4);
+  }
+
+  .title-input {
+    font-size: var(--text-xl);
+  }
+
+  .content-textarea {
+    min-height: 240px;
+  }
+
+  .submit-btn {
+    width: 100%;
+    padding: var(--space-4) var(--space-8);
+  }
+
+  .music-options {
+    padding: var(--space-4);
+  }
+}
+
+@media (max-width: 480px) {
+  .create-page .page-header {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .form-container {
+    padding: var(--space-4) var(--space-3);
+  }
+
+  .title-input {
+    font-size: var(--text-lg);
+  }
+
+  .content-textarea {
+    min-height: 200px;
+    font-size: 0.95rem;
+    padding: var(--space-4);
+  }
+
+  .music-option {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+
+  .music-option select {
+    max-width: 100%;
+    width: 100%;
+  }
+}

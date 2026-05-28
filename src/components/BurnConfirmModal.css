@@ -1,0 +1,244 @@
+/* BurnConfirmModal - Ink Ash Aesthetic */
+/* 焚之以墨 - 灰烬美学 */
+
+.burn-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 10, 0.6);
+  backdrop-filter: blur(12px) saturate(80%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal);
+  animation: burnFadeIn 0.4s var(--ease-out-expo);
+}
+
+.burn-modal {
+  width: 340px;
+  max-width: 90vw;
+  padding: var(--space-10) var(--space-8);
+  background: var(--paper-white);
+  border-radius: 2px;
+  text-align: center;
+  box-shadow:
+    0 0 0 1px rgba(26, 26, 26, 0.04),
+    0 8px 40px rgba(0, 0, 0, 0.12);
+  animation: burnModalIn 0.5s var(--ease-out-expo);
+  transition: all 0.6s var(--ease-out-expo);
+}
+
+.burn-modal--ignited {
+  background: #1a1a1a;
+  color: #c8c0b4;
+  box-shadow:
+    0 0 0 1px rgba(200, 192, 180, 0.08),
+    0 0 80px rgba(232, 90, 44, 0.2);
+}
+
+.burn-modal-icon {
+  color: var(--ember-orange);
+  margin-bottom: var(--space-5);
+  opacity: 0.8;
+}
+
+.burn-modal-title {
+  font-family: "Noto Serif SC", "Source Han Serif SC", serif;
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-normal);
+  color: var(--ink-deep);
+  margin: 0 0 var(--space-4);
+  letter-spacing: 0.15em;
+}
+
+.burn-modal--ignited .burn-modal-title {
+  color: transparent;
+}
+
+.burn-modal-story-name {
+  font-family: "Noto Serif SC", serif;
+  font-size: var(--text-base);
+  color: var(--ink-medium);
+  margin: 0 0 var(--space-4);
+  letter-spacing: 0.08em;
+}
+
+.burn-modal--ignited .burn-modal-story-name {
+  color: transparent;
+}
+
+.burn-modal-warning {
+  font-size: var(--text-sm);
+  color: var(--ink-light);
+  line-height: 1.8;
+  margin: 0 0 var(--space-8);
+  letter-spacing: 0.04em;
+}
+
+.burn-modal--ignited .burn-modal-warning {
+  color: transparent;
+}
+
+.burn-modal-actions {
+  display: flex;
+  gap: var(--space-4);
+  justify-content: center;
+}
+
+.burn-cancel-btn,
+.burn-confirm-btn {
+  padding: var(--space-3) var(--space-6);
+  font-family: "Noto Serif SC", serif;
+  font-size: var(--text-sm);
+  letter-spacing: 0.1em;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all var(--transition-fast) var(--ease-out-expo);
+}
+
+.burn-cancel-btn {
+  background: transparent;
+  border: 1px solid var(--ink-wash);
+  color: var(--ink-medium);
+}
+
+.burn-cancel-btn:hover {
+  border-color: var(--ink-medium);
+  color: var(--ink-deep);
+}
+
+.burn-confirm-btn {
+  background: transparent;
+  border: 1px solid var(--ember-orange);
+  color: var(--ember-orange);
+}
+
+.burn-confirm-btn:hover {
+  background: var(--ember-orange);
+  color: #fff;
+}
+
+/* Burning state - ember ring animation */
+.burn-modal-burning {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.burn-fire-ring {
+  position: relative;
+  width: 100px;
+  height: 100px;
+}
+
+.burn-fire-core {
+  position: absolute;
+  inset: 15px;
+  background: radial-gradient(circle, var(--ember-orange) 0%, rgba(232, 90, 44, 0.3) 40%, transparent 70%);
+  border-radius: 50%;
+  animation: corePulse 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes corePulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1.3);
+    opacity: 1;
+  }
+}
+
+.burn-ember {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--ember-orange);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--ember-orange);
+  animation: emberOrbit 2s linear infinite;
+}
+
+.burn-ember.e1 { animation-delay: 0s; }
+.burn-ember.e2 { animation-delay: 0.3s; }
+.burn-ember.e3 { animation-delay: 0.6s; }
+.burn-ember.e4 { animation-delay: 0.9s; }
+.burn-ember.e5 { animation-delay: 1.2s; }
+.burn-ember.e6 { animation-delay: 1.5s; }
+
+@keyframes emberOrbit {
+  0% {
+    top: 0;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  25% {
+    top: 50%;
+    left: 100%;
+    transform: translate(-50%, -50%) scale(1.5);
+    opacity: 0.8;
+  }
+  50% {
+    top: 100%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.8);
+    opacity: 0.4;
+  }
+  75% {
+    top: 50%;
+    left: 0;
+    transform: translate(-50%, -50%) scale(1.3);
+    opacity: 0.7;
+  }
+  100% {
+    top: 0;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+.burn-modal-ignited-text {
+  font-family: "Noto Serif SC", serif;
+  font-size: var(--text-sm);
+  color: #8a8074;
+  letter-spacing: 0.15em;
+  animation: textFadeInOut 2.8s ease-in-out;
+}
+
+@keyframes textFadeInOut {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  20% {
+    opacity: 0.8;
+    transform: translateY(0);
+  }
+  80% {
+    opacity: 0.8;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes burnFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes burnModalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
