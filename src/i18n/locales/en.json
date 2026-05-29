@@ -158,6 +158,7 @@
   "checkout.createOrderFail": "Failed to create order",
   "checkout.payFail": "Payment failed",
   "checkout.paySuccess": "Payment successful!",
+  "checkout.payTimeout": "Payment verification timeout. Check order status.",
   "share.copyLink": "Copy Link",
   "share.copied": "Copied",
   "comment.title": "Comments",

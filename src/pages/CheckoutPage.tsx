@@ -40,6 +40,8 @@ export function CheckoutPage() {
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
   const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pollCountRef = useRef(0);
+  const MAX_POLL_COUNT = 30; // 30 × 4s = 2 minutes max
 
   // Two-step flow: review → payment
   const [step, setStep] = useState<'review' | 'payment'>('review');
@@ -171,8 +173,16 @@ export function CheckoutPage() {
         setQrLoading(false);
         setShowQr(true);
 
-        // Poll for payment status (recursive setTimeout, starts immediately)
+        // Poll for payment status (recursive setTimeout, max ~2 minutes)
+        pollCountRef.current = 0;
         const poll = async () => {
+          pollCountRef.current++;
+          if (pollCountRef.current > MAX_POLL_COUNT) {
+            pollRef.current = null;
+            setProcessing(false);
+            setError(t('checkout.payTimeout'));
+            return;
+          }
           try {
             const verifyRes = await apiService.clientPost('/payments/orders/' + orderId + '/verify');
             if (verifyRes.success) {
@@ -184,8 +194,20 @@ export function CheckoutPage() {
               setTimeout(() => navigate('/my-space'), 1500);
               return;
             }
-          } catch { /* continue polling */ }
-          pollRef.current = setTimeout(poll, 4000);
+            // Non-success response — could be "not paid yet", keep polling
+          } catch (err: any) {
+            const status = err?.response?.status;
+            // Terminal errors: stop polling and show error
+            if (status === 404 || status === 400) {
+              pollRef.current = null;
+              setProcessing(false);
+              setError(err?.response?.data?.error || t('checkout.payFail'));
+              return;
+            }
+            // Network or 5xx errors: keep retrying
+          }
+          const delay = Math.min(4000 + (pollCountRef.current - 1) * 2000, 30000);
+          pollRef.current = setTimeout(poll, delay);
         };
         pollRef.current = setTimeout(poll, 0);
         return;

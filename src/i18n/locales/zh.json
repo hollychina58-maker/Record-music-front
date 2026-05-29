@@ -158,6 +158,7 @@
   "checkout.createOrderFail": "订单创建失败",
   "checkout.payFail": "支付创建失败",
   "checkout.paySuccess": "支付成功！",
+  "checkout.payTimeout": "支付确认超时，请检查订单状态",
   "share.copyLink": "复制链接",
   "share.copied": "已复制",
   "comment.title": "评论",
