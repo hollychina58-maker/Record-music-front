@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "build": "npm --prefix server install && npm --prefix server run build && rm -rf dist && cp -r server/dist dist",
+    "build": "npm --prefix server install && npm --prefix server run build && rm -rf dist node_modules && cp -r server/dist dist && cp -r server/node_modules node_modules",
     "start": "node dist/index.js"
   },
   "devDependencies": {
