@@ -24,7 +24,7 @@ interface SubscriptionInfo {
 
 export function CheckoutPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const { t } = useLanguage();
   const [product, setProduct] = useState<Product | null>(null);
@@ -50,39 +50,63 @@ export function CheckoutPage() {
   const [showQr, setShowQr] = useState(false);
 
   const productId = parseInt(searchParams.get('product') || '0', 10);
+  const returnOrderIdStr = searchParams.get('order');
+  const returnOrderId = returnOrderIdStr ? parseInt(returnOrderIdStr, 10) : null;
+  const processedReturnRef = useRef<number | null>(null);
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      navigate('/login', { replace: true });
-      return;
-    }
-    // Allow returning from payment gateway with just ?order=xxx (no product param)
-    const returnOrder = searchParams.get('order');
-    if (!productId && !returnOrder) {
-      navigate('/payment', { replace: true });
-      return;
-    }
-    if (productId) {
-      loadProduct();
-    } else {
-      setLoading(false);
-    }
-  }, [isAuthenticated, productId, navigate]);
+  // Clear all payment state when starting a new checkout session
+  const resetPaymentState = () => {
+    if (pollRef.current) { clearTimeout(pollRef.current); pollRef.current = null; }
+    pollCountRef.current = 0;
+    setOrderId(null);
+    setStep('review');
+    setShowQr(false);
+    setQrDataUrl(null);
+    setQrLoading(false);
+    setPolling(false);
+    setError('');
+    setStatusMsg('');
+    setProcessing(false);
+    setProvider('alipay');
+    setQuantity(1);
+    setCouponCode('');
+  };
 
-  useEffect(() => {
-    const order = searchParams.get('order');
-    if (order) {
-      setStatusMsg(t('checkout.processing'));
-      verifyAndActivate(parseInt(order, 10));
-    }
-  }, [searchParams]);
-
-  // Clear polling only on unmount, not on re-renders
+  // Clean up polling on unmount
   useEffect(() => {
     return () => {
       if (pollRef.current) clearTimeout(pollRef.current);
     };
   }, []);
+
+  // Handle return from payment gateway: URL has ?order=xxx
+  useEffect(() => {
+    if (!returnOrderId || !isAuthenticated) return;
+    // Prevent reprocessing the same return order
+    if (processedReturnRef.current === returnOrderId) return;
+    processedReturnRef.current = returnOrderId;
+
+    setStatusMsg(t('checkout.processing'));
+    verifyAndActivate(returnOrderId);
+  }, [returnOrderId, isAuthenticated]);
+
+  // Load product for new checkout: URL has ?product=xxx
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login', { replace: true });
+      return;
+    }
+    if (!productId && !returnOrderId) {
+      navigate('/payment', { replace: true });
+      return;
+    }
+    if (productId) {
+      resetPaymentState();
+      loadProduct();
+    } else {
+      setLoading(false);
+    }
+  }, [isAuthenticated, productId, navigate]);
 
   const loadProduct = async () => {
     try {
@@ -104,12 +128,12 @@ export function CheckoutPage() {
   };
 
   const verifyAndActivate = async (id: number) => {
-    try {
-      // Retry up to 5 times (Alipay may not have processed payment yet at redirect time)
-      for (let attempt = 0; attempt < 5; attempt++) {
-        if (attempt > 0) {
-          await new Promise((resolve) => setTimeout(resolve, 3000));
-        }
+    const MAX_RETRIES = 5;
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      if (attempt > 0) {
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+      }
+      try {
         const res = await apiService.clientPost('/payments/orders/' + id + '/verify');
         if (res.success) {
           if (pollRef.current) { clearTimeout(pollRef.current); pollRef.current = null; }
@@ -117,18 +141,34 @@ export function CheckoutPage() {
           const { updateFreeMusicCount } = useAuthStore.getState();
           const profile = await apiService.getMyProfile();
           updateFreeMusicCount(profile.freeMusicCount);
+          // Clean the order param from URL so it doesn't interfere with future checkouts
+          const next = new URLSearchParams(searchParams);
+          next.delete('order');
+          setSearchParams(next, { replace: true });
+          processedReturnRef.current = null;
           setTimeout(() => navigate('/my-space'), 1500);
           return;
         }
+      } catch (err: any) {
+        const status = err?.response?.status;
+        // 404 = order not found, terminal error
+        if (status === 404) {
+          setError(err?.response?.data?.error || t('checkout.payFail'));
+          return;
+        }
+        // 400 = not paid yet (transient), continue retrying
+        // Network/5xx errors: continue retrying
       }
-      setError(t('checkout.payFail'));
-    } catch (err: any) {
-      setError(err?.response?.data?.error || t('checkout.payFail'));
     }
+    // Exhausted retries
+    setError(t('checkout.payFail'));
   };
 
+  const creatingRef = useRef(false);
+
   const handleCreateOrder = async () => {
-    if (!product) return;
+    if (!product || creatingRef.current) return;
+    creatingRef.current = true;
     setProcessing(true);
     setError('');
 
@@ -139,17 +179,23 @@ export function CheckoutPage() {
         provider,
         couponCode: couponCode.trim() || undefined,
       });
+      if (!orderRes?.data?.orderId) {
+        setError(t('checkout.createOrderFail'));
+        return;
+      }
       setOrderId(orderRes.data.orderId);
       setStep('payment');
     } catch (err: any) {
       setError(err?.response?.data?.error || t('checkout.createOrderFail'));
     } finally {
       setProcessing(false);
+      creatingRef.current = false;
     }
   };
 
   const handlePay = async () => {
     if (!orderId) return;
+    if (!product) return;
     // Clear any leftover polling from a previous order
     if (pollRef.current) { clearTimeout(pollRef.current); pollRef.current = null; }
     setProcessing(true);
@@ -220,7 +266,11 @@ export function CheckoutPage() {
 
       setError(t('checkout.payFail'));
     } catch (err: any) {
-      setError(err?.response?.data?.error || err?.message || t('checkout.payFail'));
+      const status = err?.response?.status;
+      const msg = err?.response?.data?.error || err?.message || t('checkout.payFail');
+      // 404 = order not found (possibly deleted or wrong user)
+      // 400 = order already processed or payment not initiated
+      setError(status === 404 ? `${t('checkout.createOrderFail')} — ${msg}` : msg);
     } finally {
       setProcessing(false);
     }
