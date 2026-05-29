@@ -151,6 +151,12 @@ export const useAuthStore = create<AuthState>()(
             },
             isLoading: false,
           });
+
+          console.log('[AuthStore] fetchCurrentUser:', {
+            freeMusicCount: data.data.freeMusicCount,
+            hasActiveSub: data.data.hasActiveSubscription,
+            subRemaining: data.data.subscriptionMusicRemaining,
+          });
         } catch (error: unknown) {
           set({ isLoading: false });
           const message = error instanceof Error ? error.message : '';
