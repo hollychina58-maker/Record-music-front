@@ -61,6 +61,28 @@ export function PaymentPage() {
 
   const showPlans = !subscription || showAllPlans;
 
+  const canPurchase = (product: Product): boolean => {
+    if (!subscription || product.type === 'per_use') return true;
+    // monthly subscribers can only upgrade to yearly
+    if (subscription.planType === 'monthly' && product.type === 'yearly') return true;
+    return false;
+  };
+
+  const isUpgrade = (product: Product): boolean => {
+    return !!subscription && subscription.planType === 'monthly' && product.type === 'yearly';
+  };
+
+  const upgradePrice = (product: Product): number => {
+    // yearly price minus monthly price
+    if (subscription && subscription.planType === 'monthly' && product.type === 'yearly') {
+      const monthlyProduct = products.find(p => p.type === 'monthly');
+      if (monthlyProduct) {
+        return Math.max(0, product.priceCents - monthlyProduct.priceCents);
+      }
+    }
+    return product.priceCents;
+  };
+
   return (
     <div className="payment-page">
       <header className="page-header">
@@ -103,26 +125,39 @@ export function PaymentPage() {
             )}
 
             <div className="plans-grid">
-              {products.map((product) => (
-                <div
-                  key={product.id}
-                  className={`plan-card ${selectedProduct?.id === product.id ? 'plan-card--selected' : ''}`}
-                  onClick={() => setSelectedProduct(product)}
-                >
-                  <h3 className="plan-name">{product.name}</h3>
-                  <p className="plan-desc">{product.description}</p>
-                  <div className="plan-price">
-                    <span className="plan-currency">¥</span>
-                    <span className="plan-amount">{(product.priceCents / 100).toFixed(0)}</span>
-                    {product.type !== 'per_use' && (
-                      <span className="plan-period">/{product.type === 'yearly' ? t('payment.perYear') : t('payment.perMonth')}</span>
+              {products.map((product) => {
+                const available = canPurchase(product);
+                const upgrade = isUpgrade(product);
+                const showPrice = upgrade ? upgradePrice(product) : product.priceCents;
+
+                return (
+                  <div
+                    key={product.id}
+                    className={`plan-card ${selectedProduct?.id === product.id ? 'plan-card--selected' : ''} ${!available ? 'plan-card--disabled' : ''}`}
+                    onClick={() => available && setSelectedProduct(product)}
+                  >
+                    {upgrade && <span className="plan-badge">{t('payment.upgrade')}</span>}
+                    {!available && <span className="plan-badge plan-badge--current">{t('payment.current')}</span>}
+                    <h3 className="plan-name">{product.name}</h3>
+                    <p className="plan-desc">{product.description}</p>
+                    <div className="plan-price">
+                      <span className="plan-currency">¥</span>
+                      <span className="plan-amount">{(showPrice / 100).toFixed(0)}</span>
+                      {product.type !== 'per_use' && (
+                        <span className="plan-period">/{product.type === 'yearly' ? t('payment.perYear') : t('payment.perMonth')}</span>
+                      )}
+                    </div>
+                    {upgrade && (
+                      <div className="plan-upgrade-price">
+                        {t('payment.originalPrice')} ¥{(product.priceCents / 100).toFixed(0)}
+                      </div>
                     )}
+                    <div className="plan-limit">
+                      {product.musicLimit === null ? t('payment.unlimitedMusic') : t('payment.musicCount', { count: product.musicLimit })}
+                    </div>
                   </div>
-                  <div className="plan-limit">
-                    {product.musicLimit === null ? t('payment.unlimitedMusic') : t('payment.musicCount', { count: product.musicLimit })}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <button

@@ -1,37 +1,68 @@
-/* Ink Wash Theme v2.0 - Ethereal, Dynamic, Animated */
-/* 水墨画风格 + 现代动效 - 飘渺、灵动、烟雾流动感 */
+/* 墨韵 InkRhyme - Premium Editorial Design System */
+/* Chinese ink-wash foundation, refined for premium consumer + editorial */
+/* Palette: ink-blacks on fine-art paper, vermillion seal accents */
 
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;600&family=ZCOOL+XiaoWei&family=Noto+Naskh+Arabic:wght@400;600&family=Noto+Sans:wght@300;400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;600;700&family=ZCOOL+XiaoWei&family=Noto+Naskh+Arabic:wght@400;600&family=Noto+Sans:wght@300;400;600&display=swap');
 
 :root {
-  /* Primary Colors - Ink Palette */
+  /* === Ink Palette (near-blacks) === */
+  --ink-deepest: #080808;
   --ink-deep: #0a0a0a;
   --ink-black: #1a1a1a;
   --ink-dark: #2d2d2d;
-  --ink-medium: #4a4a4a;
+  --ink-medium: #4f4f4f;
   --ink-light: #7a7a7a;
   --ink-wash: #a8a8a8;
+  --ink-faint: #c4c4c4;
 
-  /* Paper Colors */
-  --paper-white: #fafafa;
-  --paper-cream: #f5f3ed;
-  --paper-aged: #e8e4dc;
-  --paper-mist: rgba(245, 243, 237, 0.85);
+  /* === Paper Palette (fine-art paper tones) === */
+  --paper-white: #fafaf8;
+  --paper-cream: #f6f4ef;
+  --paper-aged: #ebe7df;
+  --paper-warm: #f0ece4;
+  --paper-mist: rgba(246, 244, 239, 0.88);
 
-  /* Accent - Ember & Flame */
+  /* === Page Background (primary surface) === */
+  --color-page: #f7f5f0;
+
+  /* === Accent: Vermillion Seal Red (印泥色) - refined primary accent === */
+  --seal-red: #b8382a;
+  --seal-red-light: #d44a3a;
+  --seal-red-dark: #8b1f16;
+  --seal-glow: rgba(184, 56, 42, 0.12);
+
+  /* === Accent: Indigo (secondary, for UI elements) === */
+  --indigo: #3a4f8b;
+  --indigo-light: #5b6faa;
+
+  /* === Gold (brand/nav accent, sparingly) === */
+  --gold-pale: #e4d8c0;
+  --gold-mid: #c9a96e;
+  --gold-warm: #b8955a;
+
+  /* === Legacy Ember/Flame (preserved for burn animation, etc.) === */
   --ember-orange: #e85a2c;
   --ember-red: #c43c26;
   --ember-glow: #ff6b35;
   --flame-yellow: #f5a623;
   --flame-gold: #ffc107;
 
-  /* Typography */
+  /* === Semantic === */
+  --color-success: #4a8b5e;
+  --color-warning: #c47a2e;
+  --color-danger: var(--seal-red);
+
+  /* === Typography === */
   --font-ink: 'Noto Serif SC', 'ZCOOL XiaoWei', 'Songti SC', 'SimSun', serif;
+  --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans', sans-serif;
+
   --font-weight-light: 300;
   --font-weight-normal: 400;
-  --font-weight-bold: 600;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
 
   /* Font Sizes */
+  --text-2xs: 0.688rem;
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
   --text-base: 1rem;
@@ -40,53 +71,78 @@
   --text-2xl: 1.5rem;
   --text-3xl: 1.875rem;
   --text-4xl: 2.25rem;
+  --text-5xl: 2.75rem;
+  --text-6xl: 3.25rem;
 
-  /* Spacing */
+  /* === Spacing === */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
   --space-4: 1rem;
+  --space-5: 1.25rem;
   --space-6: 1.5rem;
   --space-8: 2rem;
+  --space-10: 2.5rem;
   --space-12: 3rem;
   --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
 
-  /* Border Radius */
+  /* === Border Radius === */
+  --radius-none: 0;
   --radius-sm: 2px;
-  --radius-md: 6px;
-  --radius-lg: 12px;
-  --radius-xl: 20px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --radius-xl: 16px;
+  --radius-full: 999px;
 
-  /* Shadows - Ink Wash Style */
-  --shadow-mist: 0 4px 20px rgba(26, 26, 26, 0.06);
-  --shadow-float: 0 12px 40px rgba(26, 26, 26, 0.12);
+  /* === Shadows (tinted ink, never pure black) === */
+  --shadow-hairline: 0 0 0 1px rgba(15, 15, 15, 0.04);
+  --shadow-mist: 0 4px 20px rgba(15, 15, 15, 0.05);
+  --shadow-float: 0 12px 40px rgba(15, 15, 15, 0.10);
+  --shadow-card: 0 2px 8px rgba(15, 15, 15, 0.04), 0 8px 32px rgba(15, 15, 15, 0.06);
+  --shadow-card-hover: 0 4px 16px rgba(15, 15, 15, 0.06), 0 16px 48px rgba(15, 15, 15, 0.10);
+  --shadow-modal: 0 24px 80px rgba(15, 15, 15, 0.18);
+
+  /* Legacy shadow aliases (preserved for existing component CSS) */
   --shadow-ink-light: 0 2px 8px rgba(26, 26, 26, 0.08);
   --shadow-ink-medium: 0 6px 24px rgba(26, 26, 26, 0.15);
   --shadow-ink-dark: 0 12px 48px rgba(26, 26, 26, 0.25);
 
-  /* Transitions */
+  /* === Transitions === */
   --transition-fast: 150ms ease;
   --transition-normal: 300ms ease;
-  --transition-slow: 600ms ease;
+  --transition-slow: 500ms ease;
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-drift: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  /* Z-Index Scale */
-  --z-bg: 0;
-  --z-base: 1;
-  --z-elevated: 10;
-  --z-float: 100;
-  --z-overlay: 200;
-  --z-modal: 300;
+  /* === Z-Index === */
+  --z-below: -1;
+  --z-base: 0;
+  --z-elevated: 1;
+  --z-dropdown: 10;
+  --z-sticky: 20;
+  --z-overlay: 30;
+  --z-modal: 40;
+  --z-toast: 50;
+
+  /* Legacy z-index aliases */
   --z-smoke: -1;
+  --z-bg: 0;
+  --z-float: 100;
+
+  /* === Layout === */
+  --nav-height: 48px;
+  --content-max: 960px;
+  --content-narrow: 680px;
 }
 
 /* ============================================
-   CSS KEYFRAME ANIMATIONS
+   KEYFRAME ANIMATIONS
    ============================================ */
 
-/* Mist/Smoke Floating Animation */
 @keyframes mistFloat {
   0%, 100% {
     transform: translate(0, 0) scale(1);
@@ -106,7 +162,6 @@
   }
 }
 
-/* Ink Blob Morphing */
 @keyframes inkMorph {
   0%, 100% {
     border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
@@ -126,164 +181,82 @@
   }
 }
 
-/* Fade In Up - for card entrances */
 @keyframes fadeInUp {
-  0% {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-/* Fade In Scale */
 @keyframes fadeInScale {
-  0% {
-    opacity: 0;
-    transform: scale(0.92);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
+  from { opacity: 0; transform: scale(0.94); }
+  to { opacity: 1; transform: scale(1); }
 }
 
-/* Ink Spread - for hover effects */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 @keyframes inkSpread {
-  0% {
-    transform: scale(0);
-    opacity: 0.6;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 0;
-  }
+  0% { transform: scale(0); opacity: 0.6; }
+  100% { transform: scale(1); opacity: 0; }
 }
 
-/* Ripple Effect */
 @keyframes ripple {
-  0% {
-    transform: scale(0);
-    opacity: 0.5;
-  }
-  100% {
-    transform: scale(4);
-    opacity: 0;
-  }
+  0% { transform: scale(0); opacity: 0.5; }
+  100% { transform: scale(4); opacity: 0; }
 }
 
-/* Float Animation - gentle hovering */
 @keyframes floatGentle {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-8px);
-  }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
 }
 
-/* Glow Pulse */
 @keyframes glowPulse {
-  0%, 100% {
-    box-shadow: 0 0 20px rgba(232, 90, 44, 0.3);
-  }
-  50% {
-    box-shadow: 0 0 40px rgba(232, 90, 44, 0.6);
-  }
+  0%, 100% { box-shadow: 0 0 24px var(--seal-glow); }
+  50% { box-shadow: 0 0 48px rgba(184, 56, 42, 0.22); }
 }
 
-/* Waveform Animation */
 @keyframes waveform {
-  0%, 100% {
-    height: 20%;
-  }
-  50% {
-    height: 100%;
-  }
+  0%, 100% { height: 20%; }
+  50% { height: 100%; }
 }
 
-/* Smoke Drift - for background atmosphere */
 @keyframes smokeDrift {
-  0% {
-    transform: translateX(-100%) translateY(0) rotate(0deg);
-    opacity: 0;
-  }
-  10% {
-    opacity: 0.15;
-  }
-  90% {
-    opacity: 0.15;
-  }
-  100% {
-    transform: translateX(100%) translateY(-50px) rotate(10deg);
-    opacity: 0;
-  }
+  0% { transform: translateX(-100%) translateY(0) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.12; }
+  90% { opacity: 0.12; }
+  100% { transform: translateX(100%) translateY(-50px) rotate(10deg); opacity: 0; }
 }
 
-/* Ash Float Up */
 @keyframes ashFloat {
-  0% {
-    transform: translateY(0) translateX(0) rotate(0deg);
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(-150px) translateX(30px) rotate(180deg);
-    opacity: 0;
-  }
+  0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(-150px) translateX(30px) rotate(180deg); opacity: 0; }
 }
 
-/* Page Transition - ink reveal */
 @keyframes inkReveal {
-  0% {
-    clip-path: inset(0 100% 0 0);
-  }
-  100% {
-    clip-path: inset(0 0 0 0);
-  }
+  0% { clip-path: inset(0 100% 0 0); }
+  100% { clip-path: inset(0 0 0 0); }
 }
 
-/* Text Gradient Flow */
 @keyframes gradientFlow {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
-/* Burning Edge Creep */
 @keyframes burnCreep {
-  0% {
-    clip-path: polygon(0 100%, 100% 100%, 100% 100%, 0 100%);
-  }
-  50% {
-    clip-path: polygon(0 100%, 100% 100%, 100% 60%, 0 75%);
-  }
-  100% {
-    clip-path: polygon(0 100%, 100% 100%, 100% 0%, 0 0%);
-  }
+  0% { clip-path: polygon(0 100%, 100% 100%, 100% 100%, 0 100%); }
+  100% { clip-path: polygon(0 100%, 100% 100%, 100% 0%, 0 0%); }
 }
 
-/* Particle Drift */
 @keyframes particleDrift {
-  0% {
-    transform: translateY(0) scale(1);
-    opacity: 0.8;
-  }
-  50% {
-    transform: translateY(-50vh) scale(0.5);
-    opacity: 0.4;
-  }
-  100% {
-    transform: translateY(-100vh) scale(0.1);
-    opacity: 0;
-  }
+  0% { transform: translateY(0) scale(1); opacity: 0.7; }
+  100% { transform: translateY(-100vh) scale(0.1); opacity: 0; }
+}
+
+@keyframes revealLine {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
 }
 
 /* ============================================
@@ -306,12 +279,7 @@ html {
 body {
   font-family: var(--font-ink);
   color: var(--ink-black);
-  background: linear-gradient(
-    135deg,
-    var(--paper-white) 0%,
-    var(--paper-cream) 50%,
-    var(--paper-aged) 100%
-  );
+  background: var(--color-page);
   line-height: 1.7;
   min-height: 100vh;
   overflow-x: hidden;
@@ -328,31 +296,24 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(
-    to bottom,
-    var(--ink-wash),
-    var(--ink-light)
-  );
+  background: linear-gradient(to bottom, var(--ink-faint), var(--ink-wash));
   border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--ink-medium);
+  background: var(--ink-light);
 }
 
-/* Selection Style */
 ::selection {
-  background: rgba(26, 26, 26, 0.15);
+  background: rgba(15, 15, 15, 0.10);
   color: var(--ink-deep);
 }
 
-/* Focus Styles */
 :focus-visible {
   outline: 2px solid var(--ink-medium);
   outline-offset: 2px;
 }
 
-/* Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

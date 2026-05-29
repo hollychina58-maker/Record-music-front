@@ -1,3 +1,6 @@
+/* Layout - Premium Editorial Navigation */
+/* Refined masthead nav, slim and intentional */
+
 .app-layout {
   min-height: 100dvh;
   display: flex;
@@ -5,87 +8,110 @@
 }
 
 .global-nav {
-  background: #1a1a1a;
   position: sticky;
   top: 0;
-  z-index: 50;
+  z-index: var(--z-sticky);
+  background: var(--ink-deepest);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .global-nav-inner {
-  max-width: 960px;
+  max-width: var(--content-max);
   margin: 0 auto;
-  padding: 0 24px;
-  height: 52px;
+  padding: 0 var(--space-6);
+  height: var(--nav-height);
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
+/* Brand wordmark */
 .nav-brand {
-  font-family: "Noto Serif SC", serif;
-  font-size: 1.1rem;
-  color: #e8dcc8;
+  font-family: var(--font-ink);
+  font-size: 1.05rem;
+  font-weight: var(--font-weight-semibold);
+  color: var(--gold-pale);
   text-decoration: none;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   flex-shrink: 0;
+  transition: color var(--transition-fast);
 }
 
+.nav-brand:hover {
+  color: #f0e8d4;
+}
+
+/* Nav links row */
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
 }
 
 .nav-link {
-  padding: 6px 14px;
-  color: #999;
+  padding: 5px 14px;
+  color: rgba(255, 255, 255, 0.55);
   text-decoration: none;
-  font-size: 0.8rem;
-  letter-spacing: 0.06em;
-  border-radius: 2px;
-  transition: all 0.2s;
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-normal);
+  letter-spacing: 0.04em;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-fast), background var(--transition-fast);
   white-space: nowrap;
 }
 
 .nav-link:hover {
-  color: #e8dcc8;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .nav-link-admin {
-  color: #c9a96e;
-}
-.nav-link-admin:hover {
-  color: #deb870;
+  color: var(--gold-mid);
 }
 
+.nav-link-admin:hover {
+  color: var(--gold-warm);
+  background: rgba(201, 169, 110, 0.08);
+}
+
+/* User identity */
 .nav-user {
-  color: #bbb;
-  font-size: 0.78rem;
-  margin-left: 12px;
-  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.40);
+  font-family: var(--font-ui);
+  font-size: var(--text-2xs);
+  margin-left: var(--space-3);
+  letter-spacing: 0.03em;
   max-width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/* Logout button */
 .nav-logout-btn {
-  margin-left: 8px;
+  margin-left: var(--space-2);
   padding: 4px 12px;
   background: transparent;
-  border: 1px solid #444;
-  border-radius: 2px;
-  color: #888;
-  font-size: 0.72rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-sm);
+  color: rgba(255, 255, 255, 0.40);
+  font-family: var(--font-ui);
+  font-size: var(--text-2xs);
   cursor: pointer;
-  font-family: inherit;
   letter-spacing: 0.04em;
-  transition: all 0.2s;
+  transition: all var(--transition-fast);
 }
 
 .nav-logout-btn:hover {
-  color: #ccc;
-  border-color: #666;
+  color: rgba(255, 255, 255, 0.70);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.nav-logout-btn:active {
+  transform: scale(0.97);
 }
 
 .app-content {
@@ -94,12 +120,12 @@
 
 @media (max-width: 640px) {
   .global-nav-inner {
-    padding: 0 12px;
+    padding: 0 var(--space-4);
   }
 
   .nav-link {
     padding: 4px 8px;
-    font-size: 0.72rem;
+    font-size: var(--text-2xs);
   }
 
   .nav-user {
@@ -107,7 +133,7 @@
   }
 
   .nav-logout-btn {
-    font-size: 0.68rem;
+    font-size: var(--text-2xs);
     padding: 4px 8px;
   }
 }

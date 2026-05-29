@@ -1,35 +1,27 @@
-/* StoryDetailPage v2.0 - Ink Reveal + Floating Comments */
-/* 墨迹展开动画 + 评论区飘入动效 */
+/* StoryDetailPage - Premium Editorial Reading Experience */
+/* Refined typography, generous whitespace, ink-wash atmosphere */
 
 .detail-page {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(
-    180deg,
-    var(--paper-white) 0%,
-    var(--paper-cream) 50%,
-    var(--paper-aged) 100%
-  );
+  background: var(--color-page);
   position: relative;
 }
 
-/* ============================================
-   PAGE HEADER
-   ============================================ */
-
+/* ===== Page Header (frosted glass masthead) ===== */
 .detail-page .page-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-4) var(--space-6);
+  padding: var(--space-3) var(--space-6);
   background: var(--paper-mist);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid rgba(26, 26, 26, 0.06);
+  border-bottom: 1px solid rgba(15, 15, 15, 0.05);
   position: sticky;
   top: 0;
-  z-index: var(--z-float);
+  z-index: var(--z-sticky);
 }
 
 .detail-page .back-btn,
@@ -49,8 +41,8 @@
 
 .detail-page .back-btn:hover,
 .detail-page .delete-btn:hover {
-  background: rgba(26, 26, 26, 0.05);
-  border-color: var(--ink-wash);
+  background: rgba(15, 15, 15, 0.04);
+  border-color: var(--ink-faint);
   color: var(--ink-deep);
   transform: translateX(-2px);
 }
@@ -68,7 +60,7 @@
 
 .detail-page .header-actions {
   display: flex;
-  gap: var(--space-3);
+  gap: var(--space-2);
 }
 
 .burn-btn {
@@ -86,7 +78,7 @@
 }
 
 .burn-btn:hover {
-  background: rgba(232, 90, 44, 0.1);
+  background: rgba(232, 90, 44, 0.08);
   border-color: var(--ember-orange);
   color: var(--ember-orange);
   transform: scale(1.05);
@@ -97,23 +89,20 @@
   height: 20px;
 }
 
-/* ============================================
-   STORY CONTENT
-   ============================================ */
-
+/* ===== Story Content Area ===== */
 .story-content {
   flex: 1;
-  max-width: 700px;
+  max-width: var(--content-narrow);
   margin: 0 auto;
   padding: var(--space-12) var(--space-6) var(--space-16);
   width: 100%;
-  animation: fadeInUp 0.8s var(--ease-out-expo);
+  animation: fadeInUp 0.7s var(--ease-out-expo);
 }
 
 /* Ink Decoration */
 .ink-decoration {
-  margin-bottom: var(--space-8);
-  animation: fadeIn 0.6s var(--ease-out-expo) 0.3s forwards;
+  margin-bottom: var(--space-10);
+  animation: fadeIn 0.5s var(--ease-out-expo) 0.2s forwards;
   opacity: 0;
 }
 
@@ -122,15 +111,14 @@
   background: linear-gradient(
     to right,
     transparent 0%,
-    var(--ink-wash) 20%,
-    var(--ink-light) 50%,
-    var(--ink-wash) 80%,
+    var(--ink-faint) 20%,
+    var(--ink-wash) 50%,
+    var(--ink-faint) 80%,
     transparent 100%
   );
   position: relative;
 }
 
-/* Animated ink flow on line */
 .ink-line::before {
   content: '';
   position: absolute;
@@ -141,10 +129,10 @@
   background: linear-gradient(
     90deg,
     transparent,
-    var(--paper-white),
+    rgba(255,255,255,0.6),
     transparent
   );
-  animation: inkFlow 4s ease-in-out infinite;
+  animation: inkFlow 5s ease-in-out infinite;
 }
 
 @keyframes inkFlow {
@@ -152,54 +140,47 @@
   100% { left: 150%; }
 }
 
-/* ============================================
-   STORY ARTICLE
-   ============================================ */
-
+/* ===== Article ===== */
 .story-content article {
-  animation: inkRevealContent 0.8s var(--ease-out-expo) forwards;
+  animation: articleReveal 0.7s var(--ease-out-expo) 0.15s forwards;
   opacity: 0;
 }
 
-@keyframes inkRevealContent {
-  0% {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
+@keyframes articleReveal {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .story-title {
-  font-size: clamp(1.75rem, 5vw, 2.5rem);
+  font-family: var(--font-ink);
+  font-size: clamp(1.75rem, 4.5vw, 2.5rem);
   font-weight: var(--font-weight-normal);
   color: var(--ink-deep);
-  margin: 0 0 var(--space-4);
-  letter-spacing: 0.08em;
-  line-height: 1.3;
+  margin: 0 0 var(--space-3);
+  letter-spacing: 0.06em;
+  line-height: 1.35;
   position: relative;
 }
 
-/* Title decorative underline */
+/* Title decorative rule */
 .story-title::after {
   content: '';
   position: absolute;
-  bottom: -12px;
+  bottom: -14px;
   left: 0;
-  width: 60px;
+  width: 56px;
   height: 2px;
-  background: linear-gradient(90deg, var(--ink-medium), transparent);
+  background: linear-gradient(90deg, var(--ink-dark), transparent);
 }
 
 .story-date {
   display: block;
-  font-size: var(--text-sm);
-  color: var(--ink-light);
-  letter-spacing: 0.1em;
-  margin-top: var(--space-6);
-  animation: fadeIn 0.5s var(--ease-out-expo) 0.5s forwards;
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  color: var(--ink-wash);
+  letter-spacing: 0.06em;
+  margin-top: var(--space-8);
+  animation: fadeIn 0.4s var(--ease-out-expo) 0.4s forwards;
   opacity: 0;
 }
 
@@ -207,85 +188,62 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  margin-top: var(--space-4);
+  margin-top: var(--space-5);
 }
 
+/* ===== Story Body (editorial reading) ===== */
 .story-body {
-  margin-top: var(--space-12);
+  margin-top: var(--space-10);
 }
 
 .story-body p {
+  font-family: var(--font-ink);
   font-size: var(--text-base);
-  line-height: 2.2;
+  line-height: 2.1;
   color: var(--ink-dark);
   margin: 0 0 var(--space-6);
-  letter-spacing: 0.02em;
-  animation: fadeInUp 0.6s var(--ease-out-expo) forwards;
+  letter-spacing: 0.015em;
+  animation: fadeInUp 0.55s var(--ease-out-expo) forwards;
   opacity: 0;
+  max-width: 65ch;
 }
 
 .story-body p:nth-child(1) { animation-delay: 0.2s; }
-.story-body p:nth-child(2) { animation-delay: 0.3s; }
-.story-body p:nth-child(3) { animation-delay: 0.4s; }
-.story-body p:nth-child(4) { animation-delay: 0.5s; }
-.story-body p:nth-child(5) { animation-delay: 0.6s; }
-.story-body p:nth-child(6) { animation-delay: 0.7s; }
-.story-body p:nth-child(7) { animation-delay: 0.8s; }
-.story-body p:nth-child(8) { animation-delay: 0.9s; }
+.story-body p:nth-child(2) { animation-delay: 0.25s; }
+.story-body p:nth-child(3) { animation-delay: 0.3s; }
+.story-body p:nth-child(4) { animation-delay: 0.35s; }
+.story-body p:nth-child(5) { animation-delay: 0.4s; }
+.story-body p:nth-child(6) { animation-delay: 0.45s; }
+.story-body p:nth-child(7) { animation-delay: 0.5s; }
+.story-body p:nth-child(8) { animation-delay: 0.55s; }
 
 .story-body p:last-child {
   margin-bottom: 0;
 }
 
-/* ============================================
-   MUSIC SECTION
-   ============================================ */
-
+/* ===== Music Section ===== */
 .music-section {
-  max-width: var(--content-width);
-  margin: 0 auto;
-  padding: var(--space-4) var(--space-6);
+  max-width: var(--content-narrow);
+  margin: var(--space-12) auto 0;
+  padding: 0 var(--space-6);
   width: 100%;
 }
 
-/* ============================================
-   ANIMATIONS
-   ============================================ */
-
+/* ===== Animations (page-level overrides) ===== */
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
 @keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes fadeInScale {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-/* ============================================
-   RESPONSIVE
-   ============================================ */
-
+/* ===== Responsive ===== */
 @media (max-width: 640px) {
   .detail-page .page-header {
-    padding: var(--space-3) var(--space-4);
+    padding: var(--space-2) var(--space-4);
   }
 
   .story-content {
@@ -293,16 +251,17 @@
   }
 
   .story-title {
-    font-size: clamp(1.25rem, 6vw, 1.75rem);
+    font-size: clamp(1.35rem, 5vw, 1.75rem);
   }
 
   .story-body p {
     font-size: 0.95rem;
-    line-height: 2;
+    line-height: 1.95;
+    max-width: none;
   }
 
   .music-section {
-    padding: var(--space-3) var(--space-4);
+    padding: 0 var(--space-4);
   }
 }
 
@@ -313,5 +272,9 @@
 
   .story-content {
     padding: var(--space-6) var(--space-3) var(--space-10);
+  }
+
+  .story-body {
+    margin-top: var(--space-8);
   }
 }
