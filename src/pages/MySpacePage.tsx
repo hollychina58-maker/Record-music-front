@@ -163,6 +163,14 @@ export function MySpacePage() {
       : t('profile.monthly')
     : null;
 
+  // Show subscription-based remaining when user has active sub, otherwise freeMusicCount
+  const remainingDisplay = profile?.subscription
+    ? (profile.subscription.musicRemaining !== null ? String(profile.subscription.musicRemaining) : '∞')
+    : String(profile?.freeMusicCount ?? 0);
+  const remainingLabel = profile?.subscription && profile.subscription.musicRemaining === null
+    ? t('payment.unlimited')
+    : t('profile.remaining');
+
   return (
     <div className="myspace-page">
       <header className="page-header">
@@ -231,8 +239,8 @@ export function MySpacePage() {
             <span className="profile-stat-label">{t('profile.statMusic')}</span>
           </div>
           <div className="profile-stat">
-            <span className="profile-stat-num">{profile?.freeMusicCount ?? 0}</span>
-            <span className="profile-stat-label">{t('profile.remaining')}</span>
+            <span className="profile-stat-num">{remainingDisplay}</span>
+            <span className="profile-stat-label">{remainingLabel}</span>
           </div>
         </div>
         {profile?.subscription && (
@@ -313,8 +321,8 @@ export function MySpacePage() {
                 <span className="stat-card-label">{t('profile.statRecentMusic')}</span>
               </div>
               <div className="stat-card">
-                <span className="stat-card-num">{profile?.freeMusicCount ?? 0}</span>
-                <span className="stat-card-label">{t('profile.statRemaining')}</span>
+                <span className="stat-card-num">{remainingDisplay}</span>
+                <span className="stat-card-label">{remainingLabel}</span>
               </div>
             </div>
           </div>

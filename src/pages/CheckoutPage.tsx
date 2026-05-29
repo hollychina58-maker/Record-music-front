@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
+import { useLanguage } from '../i18n/LanguageContext';
 import { apiService } from '../services/api';
+import QRCode from 'qrcode';
 import './CheckoutPage.css';
 
 interface Product {
@@ -13,11 +15,21 @@ interface Product {
   description: string;
 }
 
+interface SubscriptionInfo {
+  planName: string;
+  planType: string;
+  expiresAt: string;
+  musicRemaining: number | null;
+}
+
 export function CheckoutPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const { t } = useLanguage();
   const [product, setProduct] = useState<Product | null>(null);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [couponCode, setCouponCode] = useState('');
@@ -25,6 +37,9 @@ export function CheckoutPage() {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState('');
   const [statusMsg, setStatusMsg] = useState('');
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [qrLoading, setQrLoading] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Two-step flow: review → payment
   const [step, setStep] = useState<'review' | 'payment'>('review');
@@ -38,25 +53,44 @@ export function CheckoutPage() {
       navigate('/login', { replace: true });
       return;
     }
-    if (!productId) {
+    // Allow returning from payment gateway with just ?order=xxx (no product param)
+    const returnOrder = searchParams.get('order');
+    if (!productId && !returnOrder) {
       navigate('/payment', { replace: true });
       return;
     }
-    loadProduct();
+    if (productId) {
+      loadProduct();
+    } else {
+      setLoading(false);
+    }
   }, [isAuthenticated, productId, navigate]);
 
   useEffect(() => {
     const order = searchParams.get('order');
     if (order) {
-      setStatusMsg('正在验证支付...');
+      setStatusMsg(t('checkout.processing'));
       verifyAndActivate(parseInt(order, 10));
     }
   }, [searchParams]);
 
+  // Clear polling only on unmount, not on re-renders
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearTimeout(pollRef.current);
+    };
+  }, []);
+
   const loadProduct = async () => {
     try {
-      const res = await apiService.clientGet('/payments/products');
-      const found = (res.data as Product[]).find((p) => p.id === productId);
+      const [productsRes, subRes] = await Promise.all([
+        apiService.clientGet('/payments/products'),
+        apiService.clientGet('/payments/subscription'),
+      ]);
+      const products = productsRes.data as Product[];
+      setAllProducts(products);
+      setSubscription(subRes.data);
+      const found = products.find((p) => p.id === productId);
       if (!found) {
         navigate('/payment', { replace: true });
         return;
@@ -68,18 +102,25 @@ export function CheckoutPage() {
 
   const verifyAndActivate = async (id: number) => {
     try {
-      const res = await apiService.clientPost('/payments/orders/' + id + '/verify');
-      if (res.success) {
-        setStatusMsg('支付成功！');
-        const { updateFreeMusicCount } = useAuthStore.getState();
-        const profile = await apiService.getMyProfile();
-        updateFreeMusicCount(profile.freeMusicCount);
-        setTimeout(() => navigate('/my-space'), 1500);
-      } else {
-        setError('支付验证失败');
+      // Retry up to 5 times (Alipay may not have processed payment yet at redirect time)
+      for (let attempt = 0; attempt < 5; attempt++) {
+        if (attempt > 0) {
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+        }
+        const res = await apiService.clientPost('/payments/orders/' + id + '/verify');
+        if (res.success) {
+          if (pollRef.current) { clearTimeout(pollRef.current); pollRef.current = null; }
+          setStatusMsg(t('checkout.paySuccess'));
+          const { updateFreeMusicCount } = useAuthStore.getState();
+          const profile = await apiService.getMyProfile();
+          updateFreeMusicCount(profile.freeMusicCount);
+          setTimeout(() => navigate('/my-space'), 1500);
+          return;
+        }
       }
+      setError(t('checkout.payFail'));
     } catch (err: any) {
-      setError(err?.response?.data?.error || '支付验证失败');
+      setError(err?.response?.data?.error || t('checkout.payFail'));
     }
   };
 
@@ -91,13 +132,14 @@ export function CheckoutPage() {
     try {
       const orderRes = await apiService.clientPost('/payments/orders', {
         productId: product.id,
+        quantity,
         provider,
         couponCode: couponCode.trim() || undefined,
       });
       setOrderId(orderRes.data.orderId);
       setStep('payment');
     } catch (err: any) {
-      setError(err?.response?.data?.error || '订单创建失败');
+      setError(err?.response?.data?.error || t('checkout.createOrderFail'));
     } finally {
       setProcessing(false);
     }
@@ -105,21 +147,53 @@ export function CheckoutPage() {
 
   const handlePay = async () => {
     if (!orderId) return;
+    // Clear any leftover polling from a previous order
+    if (pollRef.current) { clearTimeout(pollRef.current); pollRef.current = null; }
     setProcessing(true);
     setError('');
 
     try {
-      if (provider === 'paypal') {
-        const payRes = await apiService.clientPost('/payments/orders/' + orderId + '/pay');
-        if (payRes.data.redirectUrl) {
-          window.location.href = payRes.data.redirectUrl;
-        }
-      } else {
-        // Alipay / WeChat — show QR placeholder directly (API not integrated yet)
-        setShowQr(true);
+      const payRes = await apiService.clientPost('/payments/orders/' + orderId + '/pay');
+
+      if (payRes.data.redirectUrl) {
+        window.location.href = payRes.data.redirectUrl;
+        return;
       }
+
+      if (payRes.data.qrCode) {
+        setQrLoading(true);
+        const dataUrl = await QRCode.toDataURL(payRes.data.qrCode, {
+          width: 240,
+          margin: 2,
+          color: { dark: '#1a1a2e', light: '#ffffff' },
+        });
+        setQrDataUrl(dataUrl);
+        setQrLoading(false);
+        setShowQr(true);
+
+        // Poll for payment status (recursive setTimeout, starts immediately)
+        const poll = async () => {
+          try {
+            const verifyRes = await apiService.clientPost('/payments/orders/' + orderId + '/verify');
+            if (verifyRes.success) {
+              pollRef.current = null;
+              setStatusMsg(t('checkout.paySuccess'));
+              const { updateFreeMusicCount } = useAuthStore.getState();
+              const profile = await apiService.getMyProfile();
+              updateFreeMusicCount(profile.freeMusicCount);
+              setTimeout(() => navigate('/my-space'), 1500);
+              return;
+            }
+          } catch { /* continue polling */ }
+          pollRef.current = setTimeout(poll, 4000);
+        };
+        pollRef.current = setTimeout(poll, 0);
+        return;
+      }
+
+      setError(t('checkout.payFail'));
     } catch (err: any) {
-      setError(err?.response?.data?.error || '支付创建失败');
+      setError(err?.response?.data?.error || err?.message || t('checkout.payFail'));
     } finally {
       setProcessing(false);
     }
@@ -134,22 +208,39 @@ export function CheckoutPage() {
   if (loading || !product) {
     return (
       <div className="checkout-page">
-        <div className="loading">加载中...</div>
+        <div className="loading">{t('common.loading')}</div>
       </div>
     );
   }
 
-  const totalCents = product.priceCents * quantity;
+  const isUpgrade = !!(subscription && subscription.planType === 'monthly' && product.type === 'yearly');
+
+  const unitPriceCents = (() => {
+    if (isUpgrade) {
+      const monthlyProduct = allProducts.find(p => p.type === 'monthly');
+      if (monthlyProduct) {
+        return Math.max(0, product.priceCents - monthlyProduct.priceCents);
+      }
+    }
+    return product.priceCents;
+  })();
+
+  const totalCents = unitPriceCents * quantity;
 
   return (
     <div className="checkout-page">
       <header className="page-header">
-        <button type="button" className="back-btn" onClick={() => step === 'review' ? navigate('/payment') : setStep('review')} aria-label="返回">
+        <button type="button" className="back-btn" onClick={() => {
+          if (step === 'review') { navigate('/payment'); } else {
+            if (pollRef.current) { clearTimeout(pollRef.current); pollRef.current = null; }
+            setStep('review');
+          }
+        }} aria-label={t('common.back')}>
           <svg viewBox="0 0 24 24" className="back-icon">
             <path d="M19 12H5M12 19l-7-7 7-7" fill="none" stroke="currentColor" strokeWidth="1.5" />
           </svg>
         </button>
-        <h1 className="page-title">{step === 'review' ? '确认订单' : '选择支付方式'}</h1>
+        <h1 className="page-title">{step === 'review' ? t('checkout.title') : t('checkout.selectPayment')}</h1>
       </header>
 
       <main className="checkout-content">
@@ -157,18 +248,18 @@ export function CheckoutPage() {
 
         {/* Order summary — always visible */}
         <section className="order-summary">
-          <h3 className="section-title">订单详情</h3>
+          <h3 className="section-title">{t('checkout.title')}</h3>
           <div className="order-card">
             <div className="order-row">
-              <span className="order-label">商品</span>
+              <span className="order-label">{t('checkout.product')}</span>
               <span className="order-value">{product.name}</span>
             </div>
             <div className="order-row">
-              <span className="order-label">说明</span>
+              <span className="order-label">{t('checkout.description')}</span>
               <span className="order-value order-desc">{product.description}</span>
             </div>
             <div className="order-row">
-              <span className="order-label">数量</span>
+              <span className="order-label">{t('checkout.quantity')}</span>
               <div className="qty-control">
                 <button
                   type="button"
@@ -190,11 +281,18 @@ export function CheckoutPage() {
               </div>
             </div>
             <div className="order-row">
-              <span className="order-label">单价</span>
-              <span className="order-value">¥{(product.priceCents / 100).toFixed(2)}</span>
+              <span className="order-label">{t('checkout.unitPrice')}</span>
+              <span className="order-value">
+                {isUpgrade && (
+                  <span style={{ textDecoration: 'line-through', color: 'var(--ink-wash)', marginRight: '8px', fontSize: '0.8rem' }}>
+                    ¥{(product.priceCents / 100).toFixed(2)}
+                  </span>
+                )}
+                ¥{(unitPriceCents / 100).toFixed(2)}
+              </span>
             </div>
             <div className="order-row order-row--total">
-              <span className="order-label">合计</span>
+              <span className="order-label">{t('checkout.total')}</span>
               <span className="order-total">¥{(totalCents / 100).toFixed(2)}</span>
             </div>
           </div>
@@ -206,7 +304,7 @@ export function CheckoutPage() {
             <input
               className="coupon-input"
               type="text"
-              placeholder="优惠码（可选）"
+              placeholder={t('checkout.coupon')}
               value={couponCode}
               onChange={(e) => setCouponCode(e.target.value)}
               maxLength={30}
@@ -223,7 +321,7 @@ export function CheckoutPage() {
             disabled={processing}
             onClick={handleCreateOrder}
           >
-            {processing ? '处理中...' : '支付'}
+            {processing ? t('checkout.processing') : t('checkout.payBtn')}
           </button>
         )}
 
@@ -231,7 +329,7 @@ export function CheckoutPage() {
         {step === 'payment' && !showQr && (
           <>
             <section className="payment-method">
-              <h3 className="section-title">支付方式</h3>
+              <h3 className="section-title">{t('checkout.selectPayment')}</h3>
               <div className="provider-options">
                 <label className={`provider-option${provider === 'alipay' ? ' provider-option--active' : ''}`}>
                   <input type="radio" name="provider" value="alipay" checked={provider === 'alipay'} onChange={() => { setProvider('alipay'); setShowQr(false); }} />
@@ -253,7 +351,7 @@ export function CheckoutPage() {
               disabled={processing}
               onClick={handlePay}
             >
-              {processing ? '处理中...' : `确认支付 ¥${(totalCents / 100).toFixed(2)}`}
+              {processing ? t('checkout.processing') : `${t('checkout.confirmPay')} ¥${(totalCents / 100).toFixed(2)}`}
             </button>
           </>
         )}
@@ -262,27 +360,41 @@ export function CheckoutPage() {
         {showQr && (
           <section className="qr-section">
             <div className="qr-placeholder">
-              <div className="qr-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" width="48" height="48">
-                  <rect x="3" y="3" width="7" height="7" rx="1" />
-                  <rect x="14" y="3" width="7" height="7" rx="1" />
-                  <rect x="3" y="14" width="7" height="7" rx="1" />
-                  <rect x="14" y="14" width="3" height="3" rx="0.5" />
-                  <rect x="18" y="18" width="3" height="3" rx="0.5" />
-                  <rect x="14" y="18" width="3" height="3" rx="0.5" />
-                  <rect x="18" y="14" width="3" height="3" rx="0.5" />
-                </svg>
-              </div>
-              <p className="qr-title">使用{providerLabels[provider]}扫码支付</p>
-              <p className="qr-amount">¥{(totalCents / 100).toFixed(2)}</p>
-              <p className="qr-hint">二维码加载中...</p>
-              <p className="qr-note">支付接口接入后将显示真实二维码</p>
+              {qrDataUrl ? (
+                <>
+                  <img src={qrDataUrl} alt={t('checkout.qrTitle', { provider: providerLabels[provider] })} className="qr-image" />
+                  <p className="qr-title">{t('checkout.qrTitle', { provider: providerLabels[provider] })}</p>
+                  <p className="qr-amount">¥{(totalCents / 100).toFixed(2)}</p>
+                </>
+              ) : qrLoading ? (
+                <>
+                  <div className="qr-loading-spinner" />
+                  <p className="qr-hint">{t('checkout.qrLoading')}</p>
+                </>
+              ) : (
+                <>
+                  <div className="qr-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" width="48" height="48">
+                      <rect x="3" y="3" width="7" height="7" rx="1" />
+                      <rect x="14" y="3" width="7" height="7" rx="1" />
+                      <rect x="3" y="14" width="7" height="7" rx="1" />
+                      <rect x="14" y="14" width="3" height="3" rx="0.5" />
+                      <rect x="18" y="18" width="3" height="3" rx="0.5" />
+                      <rect x="14" y="18" width="3" height="3" rx="0.5" />
+                      <rect x="18" y="14" width="3" height="3" rx="0.5" />
+                    </svg>
+                  </div>
+                  <p className="qr-title">{t('checkout.qrTitle', { provider: providerLabels[provider] })}</p>
+                  <p className="qr-amount">¥{(totalCents / 100).toFixed(2)}</p>
+                  <p className="qr-hint">{t('checkout.qrLoading')}</p>
+                </>
+              )}
             </div>
           </section>
         )}
 
         {step !== 'payment' && (
-          <p className="payment-note">支付由第三方安全处理，支持支付宝 / 微信 / PayPal</p>
+          <p className="payment-note">{t('checkout.note')}</p>
         )}
       </main>
     </div>
