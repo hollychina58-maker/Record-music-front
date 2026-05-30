@@ -38,6 +38,19 @@ interface Stats {
 
 type Tab = 'stories' | 'liked' | 'stats';
 
+function StoryCardSkeleton({ index }: { index: number }) {
+  return (
+    <div className="story-card story-card--skeleton" style={{ animationDelay: `${0.1 + index * 0.08}s` }}>
+      <div className="skeleton-poster" />
+      <div className="card-info">
+        <div className="skeleton-line skeleton-line--title" />
+        <div className="skeleton-line skeleton-line--excerpt" />
+        <div className="skeleton-line skeleton-line--meta" />
+      </div>
+    </div>
+  );
+}
+
 function StoryCard({ story, index, t }: { story: Story; index: number; t: (key: string) => string }) {
   const date = new Date(story.created_at).toLocaleDateString('zh-CN', {
     year: 'numeric',
@@ -83,6 +96,7 @@ export function MySpacePage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('stories');
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editNickname, setEditNickname] = useState('');
   const [editBio, setEditBio] = useState('');
@@ -97,6 +111,7 @@ export function MySpacePage() {
   }, [isAuthenticated, navigate]);
 
   const loadData = async () => {
+    setLoadError(false);
     try {
       const [profileData, storiesData] = await Promise.all([
         apiService.getMyProfile(),
@@ -105,7 +120,7 @@ export function MySpacePage() {
       setProfile(profileData);
       setStories(storiesData);
     } catch {
-      // silently fail
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -152,7 +167,45 @@ export function MySpacePage() {
   if (loading) {
     return (
       <div className="myspace-page">
-        <div className="loading">{t('detail.loading')}</div>
+        <header className="page-header">
+          <button type="button" className="back-btn" onClick={() => navigate('/')} aria-label="返回">
+            <svg viewBox="0 0 24 24" className="back-icon">
+              <path d="M19 12H5M12 19l-7-7 7-7" fill="none" stroke="currentColor" strokeWidth="1.5" />
+            </svg>
+          </button>
+          <h1 className="page-title">{t('nav.mySpace')}</h1>
+        </header>
+        <section className="profile-card profile-card--skeleton">
+          <div className="skeleton-line skeleton-line--name" />
+          <div className="skeleton-line skeleton-line--bio" />
+          <div className="skeleton-stats-row">
+            {[1,2,3,4].map(i => <div key={i} className="skeleton-stat" />)}
+          </div>
+        </section>
+        <div className="feed-grid myspace-grid">
+          {[0, 1, 2].map(i => <StoryCardSkeleton key={i} index={i} />)}
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="myspace-page">
+        <header className="page-header">
+          <button type="button" className="back-btn" onClick={() => navigate('/')} aria-label="返回">
+            <svg viewBox="0 0 24 24" className="back-icon">
+              <path d="M19 12H5M12 19l-7-7 7-7" fill="none" stroke="currentColor" strokeWidth="1.5" />
+            </svg>
+          </button>
+          <h1 className="page-title">{t('nav.mySpace')}</h1>
+        </header>
+        <div className="error-state">
+          <p className="error-state-text">{t('home.error.loadFailed')}</p>
+          <button type="button" className="error-retry-btn" onClick={() => { setLoading(true); loadData(); }}>
+            {t('home.error.retry')}
+          </button>
+        </div>
       </div>
     );
   }
@@ -271,6 +324,7 @@ export function MySpacePage() {
       </nav>
 
       <main className="myspace-content">
+        <div className="tab-content-enter" key={activeTab}>
         {activeTab === 'stories' && (
           stories.length === 0 ? (
             <div className="empty">
@@ -327,6 +381,7 @@ export function MySpacePage() {
             </div>
           </div>
         )}
+        </div>
       </main>
     </div>
   );

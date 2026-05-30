@@ -1,7 +1,10 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { lazy, Suspense, useEffect } from 'react';
 import { Layout } from './components/Layout';
+import { ToastContainer, useToast } from './components/Toast';
 import { useLanguage } from './i18n/LanguageContext';
+import { apiService } from './services/api';
+import { useAuthStore } from './stores/authStore';
 import { HomePage } from './pages/HomePage';
 import { CreateStoryPage } from './pages/CreateStoryPage';
 import { StoryDetailPage } from './pages/StoryDetailPage';
@@ -21,6 +24,57 @@ const AdminProductsPage = lazy(() => import('./pages/admin/AdminProductsPage').t
 
 function AdminFallback() {
   return <div style={{ display:'flex',justifyContent:'center',padding:'80px 0',color:'#bbb',fontFamily:'"Noto Serif SC",serif' }}>加载中...</div>;
+}
+
+function PendingMusicPoller() {
+  const { addToast } = useToast();
+
+  useEffect(() => {
+    const KEY = 'mo_pending_music';
+
+    const poll = async () => {
+      const raw = localStorage.getItem(KEY);
+      if (!raw) return;
+
+      let pending: Array<{ musicId: number; storyId: number; createdAt: number }>;
+      try { pending = JSON.parse(raw); } catch { return; }
+      if (pending.length === 0) return;
+
+      const remaining: typeof pending = [];
+      for (const item of pending) {
+        try {
+          const status = await apiService.pollMusicStatus(item.musicId);
+          if (status.status === 'completed') {
+            useAuthStore.getState().fetchCurrentUser();
+            addToast('success', '配乐已生成！', {
+              duration: 8000,
+              action: { label: '去听听', onClick: () => { window.location.href = `/story/${item.storyId}`; } },
+            });
+          } else if (status.status === 'failed') {
+            addToast('error', '配乐生成失败，请重试');
+          } else if (Date.now() - item.createdAt > 300000) {
+            addToast('error', '配乐生成超时，请重试');
+          } else {
+            remaining.push(item);
+          }
+        } catch {
+          if (Date.now() - item.createdAt < 300000) remaining.push(item);
+        }
+      }
+
+      if (remaining.length > 0) {
+        localStorage.setItem(KEY, JSON.stringify(remaining));
+      } else {
+        localStorage.removeItem(KEY);
+      }
+    };
+
+    poll();
+    const interval = setInterval(poll, 5000);
+    return () => clearInterval(interval);
+  }, [addToast]);
+
+  return null;
 }
 
 function App() {
@@ -52,6 +106,8 @@ function App() {
             <Route path="products" element={<Suspense fallback={<AdminFallback />}><AdminProductsPage /></Suspense>} />
           </Route>
         </Routes>
+        <PendingMusicPoller />
+        <ToastContainer />
       </Layout>
     </BrowserRouter>
   );

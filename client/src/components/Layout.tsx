@@ -18,6 +18,7 @@ export function Layout({ children }: LayoutProps) {
   const { t } = useLanguage();
   const isAdmin = user?.role === 'admin';
   const hideNav = location.pathname.startsWith('/admin');
+  const isActive = (path: string) => location.pathname === path ? ' nav-link--active' : '';
 
   const handleLogout = () => {
     logout();
@@ -35,11 +36,11 @@ export function Layout({ children }: LayoutProps) {
 
             <div className="nav-links">
               <LanguageSwitcher />
-              <Link to="/create" className="nav-link">{t('nav.write')}</Link>
+              <Link to="/create" className={`nav-link${isActive('/create')}`}>{t('nav.write')}</Link>
               {isAuthenticated ? (
                 <>
-                  <Link to="/my-space" className="nav-link">{t('nav.mySpace')}</Link>
-                  <Link to="/payment" className="nav-link">{t('nav.recharge')}</Link>
+                  <Link to="/my-space" className={`nav-link${isActive('/my-space')}`}>{t('nav.mySpace')}</Link>
+                  <Link to="/payment" className={`nav-link${isActive('/payment')}`}>{t('nav.recharge')}</Link>
                   {isAdmin && (
                     <Link to="/admin" className="nav-link nav-link-admin">{t('nav.admin')}</Link>
                   )}
@@ -58,8 +59,10 @@ export function Layout({ children }: LayoutProps) {
           </div>
         </nav>
       )}
-      <div className="app-content">
-        {children}
+      <div className="app-content" key={location.pathname}>
+        <div className="page-transition-enter">
+          {children}
+        </div>
       </div>
     </div>
   );

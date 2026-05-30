@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLanguage } from '../i18n/LanguageContext';
 import './BurnConfirmModal.css';
 
@@ -11,6 +11,16 @@ interface BurnConfirmModalProps {
 export function BurnConfirmModal({ storyTitle, onConfirm, onCancel }: BurnConfirmModalProps) {
   const { t } = useLanguage();
   const [confirmed, setConfirmed] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !confirmed) {
+        onCancel();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onCancel, confirmed]);
 
   const handleConfirm = () => {
     setConfirmed(true);

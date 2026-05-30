@@ -167,13 +167,20 @@ class ApiService {
     storyId: number,
     text: string,
     options?: { musicType?: string; musicMood?: string; musicGenre?: string }
-  ): Promise<{ id: number; status: string; filePath: string; remainingFreeCount?: number; subscriptionRemaining?: number | null }> {
-    const response = await this.client.post<{ data: { id: number; status: string; filePath: string; remainingFreeCount?: number; subscriptionRemaining?: number | null } }>(
+  ): Promise<{ musicId: number; status: string }> {
+    const response = await this.client.post<{ data: { musicId: number; status: string } }>(
       '/music/generate',
       { storyId, text, ...options },
-      { timeout: 180000 }
+      { timeout: 15000 }
     );
     return response.data.data;
+  }
+
+  async pollMusicStatus(musicId: number): Promise<{ id: number; status: string; filePath: string | null }> {
+    const response = await this.client.get<{ id: number; status: string; filePath: string | null }>(
+      '/music/status/' + musicId
+    );
+    return response.data;
   }
 
   async getMusicByStory(storyId: number): Promise<{ id: number; status: string; filePath: string | null }[]> {
