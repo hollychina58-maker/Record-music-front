@@ -30,6 +30,37 @@ export function StoryDetailPage() {
   const [storyLiked, setStoryLiked] = useState(false);
   const [commentLikes, setCommentLikes] = useState<Record<number, boolean>>({});
   const prevAuthRef = useRef(isAuthenticated);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const pollUntilReady = (musicId: number) => {
+    if (pollRef.current) clearInterval(pollRef.current);
+    pollRef.current = setInterval(async () => {
+      try {
+        const result = await apiService.pollMusicStatus(musicId);
+        if (result.status === 'completed') {
+          if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+          setMusic({ id: musicId, status: 'completed', file_path: result.filePath, style: null });
+          useAuthStore.getState().fetchCurrentUser();
+        } else if (result.status === 'failed') {
+          if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+          setMusic(null);
+        }
+      } catch {
+        // Keep polling on network errors
+      }
+    }, 4000);
+
+    // Cleanup polling on unmount
+    return () => {
+      if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+    };
+  };
+
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (prevAuthRef.current && !isAuthenticated) {
@@ -51,8 +82,15 @@ export function StoryDetailPage() {
       apiService
         .getMusicByStory(storyId)
         .then((tracks) => {
-          if (tracks.length > 0 && tracks[0].status === 'completed') {
-            setMusic(tracks[0] as unknown as MusicInfo);
+          if (tracks.length > 0) {
+            const track = tracks[0] as unknown as MusicInfo;
+            if (track.status === 'completed') {
+              setMusic(track);
+            } else if (track.status === 'pending') {
+              // Show pending state and start polling
+              setMusic(track);
+              pollUntilReady(track.id);
+            }
           }
         })
         .catch(() => {});
@@ -127,6 +165,8 @@ export function StoryDetailPage() {
       </header>
 
       <main className="story-content">
+        <div className="reading-progress-line" />
+
         <div className="ink-decoration">
           <div className="ink-line"></div>
         </div>
@@ -154,7 +194,7 @@ export function StoryDetailPage() {
             ))}
           </div>
         </article>
-        {music && (
+        {music && music.status !== 'pending' && (
           <div className="music-section">
             <MusicPlayer
               audioUrl={`${import.meta.env.VITE_API_URL || ''}/api/music/${music.id}/stream`}
@@ -163,6 +203,16 @@ export function StoryDetailPage() {
               musicId={music.id}
               canDownload={!!(user && story && user.id === story.user_id)}
             />
+          </div>
+        )}
+        {music && music.status === 'pending' && (
+          <div className="music-section" style={{ padding: '12px var(--space-6)', textAlign: 'center' }}>
+            <p className="music-empty-hint">{t('create.generating')}</p>
+          </div>
+        )}
+        {!music && !loading && user && user.id === story.user_id && (
+          <div className="music-empty">
+            <p className="music-empty-hint">{t('detail.noMusic')}</p>
           </div>
         )}
       </main>

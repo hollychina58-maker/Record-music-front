@@ -96,7 +96,14 @@ export function ProfilePage() {
             <p className="loading-text">{t('common.loading')}</p>
           ) : stories.length === 0 ? (
             <div className="empty-stories">
-              <p>{t('profile.noStories')}</p>
+              <svg className="empty-ink-illustration" viewBox="0 0 120 120" width="120" height="120">
+                <circle cx="60" cy="60" r="48" fill="none" stroke="rgba(15,15,15,0.06)" strokeWidth="1" />
+                <circle cx="60" cy="60" r="34" fill="none" stroke="rgba(15,15,15,0.04)" strokeWidth="0.5" strokeDasharray="4 6" />
+                <path d="M52 72 Q60 52 70 68 Q76 58 68 50" fill="none" stroke="rgba(15,15,15,0.10)" strokeWidth="1.2" strokeLinecap="round" />
+                <path d="M46 64 Q54 48 62 62" fill="none" stroke="rgba(15,15,15,0.12)" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="8 2" />
+                <circle cx="68" cy="46" r="2" fill="rgba(15,15,15,0.15)" />
+              </svg>
+              <p className="empty-stories-text">{t('profile.noStories')}</p>
               <Link to="/create" className="create-link">{t('profile.createFirst')}</Link>
             </div>
           ) : (

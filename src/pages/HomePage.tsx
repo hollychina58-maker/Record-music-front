@@ -7,39 +7,20 @@ import { StoryPoster } from '../components/StoryPoster';
 import { useGeo } from '../hooks/useGeo';
 import './HomePage.css';
 
-function StoryCard({ story, index, t }: { story: Story; index: number; t: (key: string) => string }) {
-  const date = new Date(story.created_at).toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-
+function StoryCardSkeleton({ index }: { index: number }) {
   return (
-    <Link
-      to={`/story/${story.id}`}
-      className="story-card"
-      style={{ animationDelay: `${0.1 + index * 0.08}s` }}
-    >
-      <StoryPoster title={story.title} content={story.content} index={index} />
+    <div className="story-card story-card--skeleton" style={{ animationDelay: `${0.1 + index * 0.08}s` }}>
+      <div className="skeleton-poster" />
       <div className="card-info">
-        <h2 className="card-title">{story.title}</h2>
-        <p className="card-excerpt">
-          {story.content.length > 80 ? story.content.slice(0, 80) + '…' : story.content}
-        </p>
+        <div className="skeleton-line skeleton-line--title" />
+        <div className="skeleton-line skeleton-line--text" />
+        <div className="skeleton-line skeleton-line--text skeleton-line--short" />
         <div className="card-meta">
-          <time className="card-date">{date}</time>
-          <div className="card-stats">
-            {story.like_count !== undefined && story.like_count > 0 && (
-              <span className="card-likes">{story.like_count} {t('home.card.likes')}</span>
-            )}
-            {story.comment_count !== undefined && story.comment_count > 0 && (
-              <span className="card-comments">{story.comment_count} {t('home.card.comments')}</span>
-            )}
-            <span className="card-read">&rarr; {t('home.card.read')}</span>
-          </div>
+          <div className="skeleton-line skeleton-line--meta" />
+          <div className="skeleton-line skeleton-line--meta" />
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
 
@@ -47,15 +28,22 @@ export function HomePage() {
   const user = useAuthStore((s) => s.user);
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const { t } = useLanguage();
   const geo = useGeo();
 
-  useEffect(() => {
+  const loadStories = () => {
+    setLoading(true);
+    setLoadError(false);
     apiService
       .getStories({ language: geo.language, countryCode: geo.countryCode })
-      .then(setStories)
-      .catch(() => {})
+      .then((data) => setStories(data))
+      .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadStories();
   }, [geo.language, geo.countryCode]);
 
   return (
@@ -85,8 +73,16 @@ export function HomePage() {
 
       <main className="feed">
         {loading ? (
-          <div className="loading">
-            <span className="load-text">{t('home.loading')}</span>
+          <div className="feed-grid feed-grid--bento">
+            {[0, 1, 2].map((i) => (
+              <StoryCardSkeleton key={i} index={i} />
+            ))}
+          </div>
+        ) : loadError ? (
+          <div className="empty">
+            <div className="empty-circle">!</div>
+            <p className="empty-title">{t('home.error.loadFailed')}</p>
+            <button className="empty-link" onClick={loadStories}>{t('home.error.retry')}</button>
           </div>
         ) : stories.length === 0 ? (
           <div className="empty">
@@ -96,11 +92,67 @@ export function HomePage() {
             <Link to="/create" className="empty-link">{t('home.empty.link')}</Link>
           </div>
         ) : (
-          <div className="feed-grid">
-            {stories.map((story, i) => (
-              <StoryCard key={story.id} story={story} index={i} t={t} />
-            ))}
-          </div>
+          <>
+            {stories.length >= 5 && (
+              <section className="featured-strip">
+                <div className="featured-scroll">
+                  {stories.slice(0, 4).map((story, i) => (
+                    <Link
+                      key={story.id}
+                      to={`/story/${story.id}`}
+                      className="featured-card"
+                      style={{ animationDelay: `${i * 0.1}s` }}
+                    >
+                      <StoryPoster title={story.title} content={story.content} index={i} />
+                      <div className="featured-info">
+                        <h3 className="featured-title">{story.title}</h3>
+                        <p className="featured-excerpt">
+                          {story.content.length > 40 ? story.content.slice(0, 40) + '…' : story.content}
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            )}
+            <div className="feed-grid feed-grid--bento">
+              {stories.map((story, i) => {
+                const cardClass = `story-card${i === 0 ? ' story-card--hero' : ''}`;
+                return (
+                  <Link
+                    key={story.id}
+                    to={`/story/${story.id}`}
+                    className={cardClass}
+                    style={{ animationDelay: `${0.1 + i * 0.06}s` }}
+                  >
+                    <StoryPoster title={story.title} content={story.content} index={i} />
+                    <div className="card-info">
+                      <h2 className="card-title">{story.title}</h2>
+                      <p className="card-excerpt">
+                        {story.content.length > 80 ? story.content.slice(0, 80) + '…' : story.content}
+                      </p>
+                      <div className="card-meta">
+                        <time className="card-date">
+                          {new Date(story.created_at).toLocaleDateString('zh-CN', {
+                            year: 'numeric', month: 'long', day: 'numeric',
+                          })}
+                        </time>
+                        <div className="card-stats">
+                          {story.like_count !== undefined && story.like_count > 0 && (
+                            <span className="card-likes">{story.like_count} {t('home.card.likes')}</span>
+                          )}
+                          {story.comment_count !== undefined && story.comment_count > 0 && (
+                            <span className="card-comments">{story.comment_count} {t('home.card.comments')}</span>
+                          )}
+                          <span className="card-read">&rarr; {t('home.card.read')}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </>
         )}
       </main>
 

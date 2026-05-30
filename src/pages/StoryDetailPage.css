@@ -221,12 +221,56 @@
   margin-bottom: 0;
 }
 
-/* ===== Music Section ===== */
+/* Drop cap on first paragraph */
+.story-body p:first-child::first-letter {
+  font-size: 3.5em;
+  float: left;
+  line-height: 0.75;
+  padding-right: 8px;
+  padding-top: 4px;
+  color: var(--ink-deep);
+  font-weight: var(--font-weight-light);
+}
+
+/* ===== Reading Progress Line ===== */
+.reading-progress-line {
+  position: fixed;
+  top: 0;
+  width: 1px;
+  height: 100vh;
+  background: rgba(15, 15, 15, 0.06);
+  z-index: var(--z-below, -1);
+  pointer-events: none;
+}
+
+/* ===== Music Section (floating player) ===== */
 .music-section {
+  position: sticky;
+  bottom: 0;
+  background: var(--paper-mist);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-top: 1px solid rgba(15, 15, 15, 0.06);
+  padding: 10px var(--space-6);
+  margin: var(--space-12) calc(-1 * var(--space-6)) 0;
+  width: calc(100% + var(--space-6) * 2);
+  max-width: none;
+  z-index: var(--z-sticky, 20);
+}
+
+/* ===== Music Empty State ===== */
+.music-empty {
   max-width: var(--content-narrow);
-  margin: var(--space-12) auto 0;
+  margin: var(--space-8) auto 0;
   padding: 0 var(--space-6);
   width: 100%;
+  text-align: center;
+}
+
+.music-empty-hint {
+  font-family: var(--font-ink);
+  font-size: var(--text-sm);
+  color: var(--ink-wash);
 }
 
 /* ===== Animations (page-level overrides) ===== */
@@ -261,7 +305,9 @@
   }
 
   .music-section {
-    padding: 0 var(--space-4);
+    padding: 8px var(--space-4);
+    margin: var(--space-10) calc(-1 * var(--space-4)) 0;
+    width: calc(100% + var(--space-4) * 2);
   }
 }
 

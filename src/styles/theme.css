@@ -136,7 +136,9 @@
   /* === Layout === */
   --nav-height: 48px;
   --content-max: 960px;
+  --content-max-editorial: 1200px;
   --content-narrow: 680px;
+  --ease-bleed: cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
 /* ============================================
