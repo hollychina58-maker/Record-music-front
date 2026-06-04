@@ -24,6 +24,7 @@ interface OrderRow {
   status: string;
   payment_provider: string | null;
   payment_id: string | null;
+  coupon_code: string | null;
 }
 
 interface ActiveSubRow {
@@ -137,36 +138,38 @@ router.post('/orders', authMiddleware, (req: AuthRequest, res: Response) => {
       }
     }
 
-    // Apply coupon if provided
+    // Validate coupon but DO NOT consume it yet — consumed only after payment is confirmed
+    let appliedCouponCode: string | null = null;
     if (req.body.couponCode) {
       const coupon = db.prepare(
-        "SELECT * FROM coupons WHERE code = ? AND is_active = 1 AND used_count < max_uses AND valid_from <= datetime('now') AND valid_until >= datetime('now')"
+        "SELECT * FROM coupons WHERE code = ? AND is_active = 1 AND (max_uses IS NULL OR used_count < max_uses) AND (valid_from IS NULL OR valid_from <= datetime('now')) AND (valid_until IS NULL OR valid_until >= datetime('now'))"
       ).get(req.body.couponCode) as any;
 
       if (coupon) {
-        if (coupon.discount_percent) {
-          totalCents = Math.round(totalCents * (100 - coupon.discount_percent) / 100);
+        const discountPercent = Math.min(99, Math.max(0, coupon.discount_percent || 0));
+        if (discountPercent > 0) {
+          totalCents = Math.round(totalCents * (100 - discountPercent) / 100);
         }
-        if (coupon.discount_cents) {
+        if (coupon.discount_cents > 0) {
           totalCents = Math.max(0, totalCents - coupon.discount_cents);
         }
-        db.prepare('UPDATE coupons SET used_count = used_count + 1 WHERE id = ?').run(coupon.id);
+        appliedCouponCode = coupon.code;
       }
     }
 
     const planType = isUpgrade ? `${product.type}:upgrade` : product.type;
 
-    const result = db.prepare(`
-      INSERT INTO orders (user_id, plan_type, amount, currency, total_cents, payment_provider, status)
-      VALUES (?, ?, ?, 'CNY', ?, ?, 'pending')
-    `).run(userId, planType, totalCents / 100, totalCents, provider);
+    // Wrap in transaction so the order record is atomic
+    let newOrderId!: number;
+    db.transaction(() => {
+      const result = db.prepare(`
+        INSERT INTO orders (user_id, plan_type, amount, currency, total_cents, payment_provider, status, coupon_code)
+        VALUES (?, ?, ?, 'CNY', ?, ?, 'pending', ?)
+      `).run(userId, planType, totalCents / 100, totalCents, provider, appliedCouponCode);
+      newOrderId = Number(result.lastInsertRowid);
+    })();
 
-    const newOrderId = Number(result.lastInsertRowid);
-    console.log('[CreateOrder] Order created:', { orderId: newOrderId, userId, planType, totalCents, provider, amount: totalCents / 100 });
-
-    // Verify the order was persisted
-    const verify = db.prepare('SELECT id, user_id, status FROM orders WHERE id = ?').get(newOrderId) as any;
-    console.log('[CreateOrder] Persistence verified:', { orderId: newOrderId, found: !!verify, dbUserId: verify?.user_id });
+    console.log('[CreateOrder] Order created:', { orderId: newOrderId, userId, planType, totalCents, provider });
 
     res.json({ success: true, data: {
       orderId: newOrderId,
@@ -246,54 +249,54 @@ router.post('/orders/:id/verify', authMiddleware, async (req: AuthRequest, res: 
     const verified = await provider.verifyPayment(order.payment_id);
 
     if (verified.verified) {
-      db.prepare(
-        "UPDATE orders SET status = 'completed', payment_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
-      ).run(verified.providerOrderId, orderId);
+      // Wrap entire activation in a transaction — order + subscription + coupon must all succeed
+      db.transaction(() => {
+        db.prepare(
+          "UPDATE orders SET status = 'completed', payment_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+        ).run(verified.providerOrderId, orderId);
 
-      // Get the product associated with this order
-      // plan_type may include ":upgrade" suffix for month→year upgrades
-      const baseType = order.plan_type.replace(':upgrade', '');
-      const product = db.prepare(
-        "SELECT * FROM products WHERE type = ? AND is_active = 1 LIMIT 1"
-      ).get(baseType) as ProductRow | undefined;
+        const baseType = order.plan_type.replace(':upgrade', '');
+        const product = db.prepare(
+          "SELECT * FROM products WHERE type = ? AND is_active = 1 LIMIT 1"
+        ).get(baseType) as ProductRow | undefined;
 
-      if (product) {
-        if (product.type === 'per_use') {
-          const limit = product.music_limit || 1;
-          const unitPrice = product.price_cents || 1;
-          const quantity = Math.round((order.total_cents ?? (order.amount * 100)) / unitPrice);
-          db.prepare('UPDATE users SET free_music_count = free_music_count + ? WHERE id = ?')
-            .run(limit * quantity, order.user_id);
-        } else {
-          // monthly or yearly — create/update subscription
-          const days = product.type === 'yearly' ? 365 : 30;
-          const existing = db.prepare('SELECT id FROM subscriptions WHERE user_id = ?').get(order.user_id) as any;
-          const userRow = db.prepare('SELECT free_music_count FROM users WHERE id = ?').get(order.user_id) as any;
-          const carryOver = userRow?.free_music_count || 0;
-
-          // For yearly (unlimited), music_remaining stays NULL.
-          // For monthly, add carry-over per-use credits to the plan limit.
-          const musicRemaining = product.music_limit !== null
-            ? (product.music_limit + carryOver)
-            : null;
-
-          if (existing) {
-            db.prepare(`
-              UPDATE subscriptions SET product_id = ?, starts_at = datetime('now'),
-                expires_at = datetime('now', '+${days} days'), music_remaining = ?, status = 'active'
-              WHERE user_id = ?
-            `).run(product.id, musicRemaining, order.user_id);
+        if (product) {
+          if (product.type === 'per_use') {
+            const limit = product.music_limit || 1;
+            const unitPrice = product.price_cents || 1;
+            const quantity = Math.max(1, Math.round((order.total_cents ?? (order.amount * 100)) / unitPrice));
+            db.prepare('UPDATE users SET free_music_count = free_music_count + ? WHERE id = ?')
+              .run(limit * quantity, order.user_id);
           } else {
-            db.prepare(`
-              INSERT INTO subscriptions (user_id, product_id, starts_at, expires_at, music_remaining)
-              VALUES (?, ?, datetime('now'), datetime('now', '+${days} days'), ?)
-            `).run(order.user_id, product.id, musicRemaining);
-          }
+            const days = product.type === 'yearly' ? 365 : 30;
+            const existing = db.prepare('SELECT id FROM subscriptions WHERE user_id = ?').get(order.user_id) as any;
+            const userRow = db.prepare('SELECT free_music_count FROM users WHERE id = ?').get(order.user_id) as any;
+            const carryOver = Math.max(0, userRow?.free_music_count || 0);
+            const musicRemaining = product.music_limit !== null ? (product.music_limit + carryOver) : null;
 
-          // Reset per-use counter since credits are now folded into subscription
-          db.prepare('UPDATE users SET free_music_count = 0 WHERE id = ?').run(order.user_id);
+            if (existing) {
+              db.prepare(`
+                UPDATE subscriptions SET product_id = ?, starts_at = datetime('now'),
+                  expires_at = datetime('now', '+${days} days'), music_remaining = ?, status = 'active'
+                WHERE user_id = ?
+              `).run(product.id, musicRemaining, order.user_id);
+            } else {
+              db.prepare(`
+                INSERT INTO subscriptions (user_id, product_id, starts_at, expires_at, music_remaining)
+                VALUES (?, ?, datetime('now'), datetime('now', '+${days} days'), ?)
+              `).run(order.user_id, product.id, musicRemaining);
+            }
+            db.prepare('UPDATE users SET free_music_count = 0 WHERE id = ?').run(order.user_id);
+          }
         }
-      }
+
+        // Consume coupon now that payment is confirmed
+        if (order.coupon_code) {
+          db.prepare(
+            "UPDATE coupons SET used_count = used_count + 1 WHERE code = ? AND (max_uses IS NULL OR used_count < max_uses)"
+          ).run(order.coupon_code);
+        }
+      })();
 
       res.json({ success: true, data: { orderId, status: 'completed' } });
     } else {
@@ -384,48 +387,54 @@ router.post('/alipay/notify', express.raw({ type: 'application/x-www-form-urlenc
       return;
     }
 
-    db.prepare(
-      "UPDATE orders SET status = 'completed', payment_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
-    ).run(outTradeNo, order.id);
+    // All activation operations in one transaction — no partial state on failure
+    db.transaction(() => {
+      db.prepare(
+        "UPDATE orders SET status = 'completed', payment_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+      ).run(outTradeNo, order.id);
 
-    const baseType = order.plan_type.replace(':upgrade', '');
-    const product = db.prepare(
-      'SELECT * FROM products WHERE type = ? AND is_active = 1 LIMIT 1'
-    ).get(baseType) as ProductRow | undefined;
+      const baseType = order.plan_type.replace(':upgrade', '');
+      const product = db.prepare(
+        'SELECT * FROM products WHERE type = ? AND is_active = 1 LIMIT 1'
+      ).get(baseType) as ProductRow | undefined;
 
-    if (product) {
-      if (product.type === 'per_use') {
-        const limit = product.music_limit || 1;
-        const unitPrice = product.price_cents || 1;
-        const quantity = Math.round((order.total_cents ?? (order.amount * 100)) / unitPrice);
-        db.prepare('UPDATE users SET free_music_count = free_music_count + ? WHERE id = ?')
-          .run(limit * quantity, order.user_id);
-      } else {
-        const days = product.type === 'yearly' ? 365 : 30;
-        const existing = db.prepare('SELECT id FROM subscriptions WHERE user_id = ?').get(order.user_id) as any;
-        const userRow = db.prepare('SELECT free_music_count FROM users WHERE id = ?').get(order.user_id) as any;
-        const carryOver = userRow?.free_music_count || 0;
-
-        const musicRemaining = product.music_limit !== null
-          ? (product.music_limit + carryOver)
-          : null;
-
-        if (existing) {
-          db.prepare(`
-            UPDATE subscriptions SET product_id = ?, starts_at = datetime('now'),
-              expires_at = datetime('now', '+${days} days'), music_remaining = ?, status = 'active'
-            WHERE user_id = ?
-          `).run(product.id, musicRemaining, order.user_id);
+      if (product) {
+        if (product.type === 'per_use') {
+          const limit = product.music_limit || 1;
+          const unitPrice = product.price_cents || 1;
+          const quantity = Math.max(1, Math.round((order.total_cents ?? (order.amount * 100)) / unitPrice));
+          db.prepare('UPDATE users SET free_music_count = free_music_count + ? WHERE id = ?')
+            .run(limit * quantity, order.user_id);
         } else {
-          db.prepare(`
-            INSERT INTO subscriptions (user_id, product_id, starts_at, expires_at, music_remaining)
-            VALUES (?, ?, datetime('now'), datetime('now', '+${days} days'), ?)
-          `).run(order.user_id, product.id, musicRemaining);
-        }
+          const days = product.type === 'yearly' ? 365 : 30;
+          const existing = db.prepare('SELECT id FROM subscriptions WHERE user_id = ?').get(order.user_id) as any;
+          const userRow = db.prepare('SELECT free_music_count FROM users WHERE id = ?').get(order.user_id) as any;
+          const carryOver = Math.max(0, userRow?.free_music_count || 0);
+          const musicRemaining = product.music_limit !== null ? (product.music_limit + carryOver) : null;
 
-        db.prepare('UPDATE users SET free_music_count = 0 WHERE id = ?').run(order.user_id);
+          if (existing) {
+            db.prepare(`
+              UPDATE subscriptions SET product_id = ?, starts_at = datetime('now'),
+                expires_at = datetime('now', '+${days} days'), music_remaining = ?, status = 'active'
+              WHERE user_id = ?
+            `).run(product.id, musicRemaining, order.user_id);
+          } else {
+            db.prepare(`
+              INSERT INTO subscriptions (user_id, product_id, starts_at, expires_at, music_remaining)
+              VALUES (?, ?, datetime('now'), datetime('now', '+${days} days'), ?)
+            `).run(order.user_id, product.id, musicRemaining);
+          }
+          db.prepare('UPDATE users SET free_music_count = 0 WHERE id = ?').run(order.user_id);
+        }
       }
-    }
+
+      // Consume coupon now that payment is confirmed
+      if (order.coupon_code) {
+        db.prepare(
+          "UPDATE coupons SET used_count = used_count + 1 WHERE code = ? AND (max_uses IS NULL OR used_count < max_uses)"
+        ).run(order.coupon_code);
+      }
+    })();
 
     console.log('[Alipay Notify] Order activated:', order.id);
     res.send('success');

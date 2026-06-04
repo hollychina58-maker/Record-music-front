@@ -44,6 +44,8 @@ export function createAlipayProvider(): PaymentProvider {
       const notifyUrl = process.env.ALIPAY_NOTIFY_URL;
       if (notifyUrl) {
         params.notifyUrl = notifyUrl;
+      } else {
+        console.warn('[Alipay] ALIPAY_NOTIFY_URL not set — async payment notifications will not be received. Polling will be the only confirmation method.');
       }
 
       console.log('[Alipay] Creating precreate payment:', {

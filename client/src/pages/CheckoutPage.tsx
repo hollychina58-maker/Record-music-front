@@ -162,8 +162,8 @@ export function CheckoutPage() {
         // Network/5xx errors: continue retrying
       }
     }
-    // Exhausted retries
-    setError(t('checkout.payFail'));
+    // Retries exhausted — payment may have succeeded but verification timed out
+    setError(t('checkout.payTimeout'));
   };
 
   const creatingRef = useRef(false);

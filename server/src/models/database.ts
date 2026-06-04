@@ -180,6 +180,7 @@ export function initDatabase(): void {
   addColumnIfMissing('orders', 'payment_id', 'TEXT');
   addColumnIfMissing('orders', 'metadata', 'TEXT');
   addColumnIfMissing('orders', 'updated_at', 'DATETIME');
+  addColumnIfMissing('orders', 'coupon_code', 'TEXT');
 
   console.log('Database initialized');
 }
