@@ -1,195 +1,259 @@
-import Database from 'better-sqlite3';
+import { createClient, Client, ResultSet, InValue } from '@libsql/client';
 import path from 'path';
 import fs from 'fs';
 
-let db: Database.Database;
+let client: Client;
 
-export function getDatabase(): Database.Database {
-  if (!db) {
-    throw new Error('Database not initialized');
-  }
-  return db;
+export function getDatabase(): Client {
+  if (!client) throw new Error('Database not initialized');
+  return client;
 }
 
-export function initDatabase(): void {
-  const dbPath = process.env.DB_PATH || './data/app.db';
-  const dbDir = path.dirname(dbPath);
+// Helper: run a single query and return all rows as plain objects
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Args = any[];
 
-  if (!fs.existsSync(dbDir)) {
-    fs.mkdirSync(dbDir, { recursive: true });
-  }
+export async function dbAll<T = Record<string, unknown>>(
+  sql: string,
+  args: Args = []
+): Promise<T[]> {
+  const result = await client.execute({ sql, args });
+  return result.rows as unknown as T[];
+}
 
-  db = new Database(dbPath);
-  db.pragma('journal_mode = WAL');
+export async function dbGet<T = Record<string, unknown>>(
+  sql: string,
+  args: Args = []
+): Promise<T | undefined> {
+  const result = await client.execute({ sql, args });
+  return result.rows[0] as unknown as T | undefined;
+}
 
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
-      nickname TEXT,
-      avatar TEXT,
-      free_music_count INTEGER DEFAULT 3,
-      role TEXT DEFAULT 'user',
-      banned_until DATETIME,
-      country_code TEXT,
-      bio TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS stories (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER,
-      title TEXT NOT NULL,
-      content TEXT NOT NULL,
-      metadata TEXT,
-      language TEXT DEFAULT 'cmn',
-      like_count INTEGER DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id)
-    );
-
-    CREATE TABLE IF NOT EXISTS music (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      story_id INTEGER NOT NULL,
-      file_path TEXT,
-      duration INTEGER,
-      style TEXT,
-      status TEXT DEFAULT 'pending',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (story_id) REFERENCES stories(id)
-    );
-
-    CREATE TABLE IF NOT EXISTS comments (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      story_id INTEGER NOT NULL,
-      user_id INTEGER,
-      author_name TEXT NOT NULL,
-      content TEXT NOT NULL,
-      is_hidden INTEGER DEFAULT 0,
-      like_count INTEGER DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (story_id) REFERENCES stories(id),
-      FOREIGN KEY (user_id) REFERENCES users(id)
-    );
-
-    CREATE TABLE IF NOT EXISTS burned_stories (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      story_id INTEGER NOT NULL UNIQUE,
-      burned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (story_id) REFERENCES stories(id)
-    );
-
-    CREATE TABLE IF NOT EXISTS orders (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      plan_type TEXT NOT NULL,
-      amount REAL NOT NULL,
-      currency TEXT DEFAULT 'CNY',
-      status TEXT DEFAULT 'pending',
-      total_cents INTEGER,
-      payment_provider TEXT,
-      payment_id TEXT,
-      metadata TEXT,
-      updated_at DATETIME,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id)
-    );
-
-    CREATE TABLE IF NOT EXISTS music_usage (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      story_id INTEGER NOT NULL,
-      music_id INTEGER NOT NULL,
-      used_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id),
-      FOREIGN KEY (story_id) REFERENCES stories(id),
-      FOREIGN KEY (music_id) REFERENCES music(id)
-    );
-
-    CREATE TABLE IF NOT EXISTS likes (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      target_type TEXT NOT NULL CHECK(target_type IN ('story', 'comment')),
-      target_id INTEGER NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id),
-      UNIQUE(user_id, target_type, target_id)
-    );
-
-    CREATE TABLE IF NOT EXISTS products (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      type TEXT NOT NULL CHECK(type IN ('per_use', 'monthly', 'yearly')),
-      price_cents INTEGER NOT NULL,
-      music_limit INTEGER,
-      description TEXT,
-      is_active INTEGER DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS subscriptions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL UNIQUE,
-      product_id INTEGER NOT NULL,
-      starts_at DATETIME NOT NULL,
-      expires_at DATETIME NOT NULL,
-      music_remaining INTEGER,
-      status TEXT DEFAULT 'active' CHECK(status IN ('active', 'expired', 'cancelled')),
-      FOREIGN KEY (user_id) REFERENCES users(id),
-      FOREIGN KEY (product_id) REFERENCES products(id)
-    );
-
-    CREATE TABLE IF NOT EXISTS coupons (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      code TEXT NOT NULL UNIQUE,
-      discount_percent INTEGER,
-      discount_cents INTEGER,
-      valid_from DATETIME,
-      valid_until DATETIME,
-      max_uses INTEGER,
-      used_count INTEGER DEFAULT 0,
-      is_active INTEGER DEFAULT 1
-    );
-  `);
-
-  // Seed default products
-  const productCount = db.prepare('SELECT COUNT(*) as count FROM products').get() as { count: number };
-  if (productCount.count === 0) {
-    db.prepare(`
-      INSERT INTO products (name, type, price_cents, music_limit, description) VALUES
-        ('按次付费', 'per_use', 100, 1, '1次音乐生成'),
-        ('月度会员', 'monthly', 3000, 60, '30天内60次音乐生成'),
-        ('年度会员', 'yearly', 28800, NULL, '365天内无限次音乐生成')
-    `).run();
-  }
-
-  // Migrate columns for existing databases
-  const addColumnIfMissing = (table: string, column: string, def: string) => {
-    try { db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${def}`); } catch { /* exists */ }
+export async function dbRun(
+  sql: string,
+  args: Args = []
+): Promise<{ lastInsertRowid: number; changes: number }> {
+  const result = await client.execute({ sql, args });
+  return {
+    lastInsertRowid: Number(result.lastInsertRowid ?? 0),
+    changes: result.rowsAffected,
   };
-  addColumnIfMissing('users', 'role', "TEXT DEFAULT 'user'");
-  addColumnIfMissing('users', 'banned_until', 'DATETIME');
-  addColumnIfMissing('users', 'country_code', 'TEXT');
-  addColumnIfMissing('users', 'bio', 'TEXT');
-  addColumnIfMissing('stories', 'language', "TEXT DEFAULT 'cmn'");
-  addColumnIfMissing('stories', 'country_code', 'TEXT');
-  addColumnIfMissing('stories', 'like_count', 'INTEGER DEFAULT 0');
-  addColumnIfMissing('comments', 'like_count', 'INTEGER DEFAULT 0');
-  addColumnIfMissing('comments', 'user_id', 'INTEGER');
-  addColumnIfMissing('orders', 'total_cents', 'INTEGER');
-  addColumnIfMissing('orders', 'payment_provider', 'TEXT');
-  addColumnIfMissing('orders', 'payment_id', 'TEXT');
-  addColumnIfMissing('orders', 'metadata', 'TEXT');
-  addColumnIfMissing('orders', 'updated_at', 'DATETIME');
-  addColumnIfMissing('orders', 'coupon_code', 'TEXT');
-
-  console.log('Database initialized');
 }
 
-export function closeDatabase(): void {
-  if (db) {
-    db.close();
+export async function dbBatch(
+  stmts: { sql: string; args?: Args }[]
+): Promise<ResultSet[]> {
+  return client.batch(
+    stmts.map((s) => ({ sql: s.sql, args: s.args })),
+    'write'
+  );
+}
+
+const CREATE_TABLES = `
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  nickname TEXT,
+  avatar TEXT,
+  free_music_count INTEGER DEFAULT 3,
+  role TEXT DEFAULT 'user',
+  banned_until DATETIME,
+  country_code TEXT,
+  bio TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS stories (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER,
+  title TEXT NOT NULL,
+  content TEXT NOT NULL,
+  metadata TEXT,
+  language TEXT DEFAULT 'cmn',
+  country_code TEXT,
+  like_count INTEGER DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS music (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  story_id INTEGER NOT NULL,
+  file_path TEXT,
+  duration INTEGER,
+  style TEXT,
+  status TEXT DEFAULT 'pending',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (story_id) REFERENCES stories(id)
+);
+
+CREATE TABLE IF NOT EXISTS comments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  story_id INTEGER NOT NULL,
+  user_id INTEGER,
+  author_name TEXT NOT NULL,
+  content TEXT NOT NULL,
+  is_hidden INTEGER DEFAULT 0,
+  like_count INTEGER DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (story_id) REFERENCES stories(id),
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS burned_stories (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  story_id INTEGER NOT NULL UNIQUE,
+  burned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (story_id) REFERENCES stories(id)
+);
+
+CREATE TABLE IF NOT EXISTS orders (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  plan_type TEXT NOT NULL,
+  amount REAL NOT NULL,
+  currency TEXT DEFAULT 'CNY',
+  status TEXT DEFAULT 'pending',
+  total_cents INTEGER,
+  payment_provider TEXT,
+  payment_id TEXT,
+  coupon_code TEXT,
+  metadata TEXT,
+  updated_at DATETIME,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS music_usage (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  story_id INTEGER NOT NULL,
+  music_id INTEGER NOT NULL,
+  used_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id),
+  FOREIGN KEY (story_id) REFERENCES stories(id),
+  FOREIGN KEY (music_id) REFERENCES music(id)
+);
+
+CREATE TABLE IF NOT EXISTS likes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  target_type TEXT NOT NULL,
+  target_id INTEGER NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id),
+  UNIQUE(user_id, target_type, target_id)
+);
+
+CREATE TABLE IF NOT EXISTS products (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  type TEXT NOT NULL,
+  price_cents INTEGER NOT NULL,
+  music_limit INTEGER,
+  description TEXT,
+  is_active INTEGER DEFAULT 1,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS subscriptions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL UNIQUE,
+  product_id INTEGER NOT NULL,
+  starts_at DATETIME NOT NULL,
+  expires_at DATETIME NOT NULL,
+  music_remaining INTEGER,
+  status TEXT DEFAULT 'active',
+  FOREIGN KEY (user_id) REFERENCES users(id),
+  FOREIGN KEY (product_id) REFERENCES products(id)
+);
+
+CREATE TABLE IF NOT EXISTS coupons (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT NOT NULL UNIQUE,
+  discount_percent INTEGER,
+  discount_cents INTEGER,
+  valid_from DATETIME,
+  valid_until DATETIME,
+  max_uses INTEGER,
+  used_count INTEGER DEFAULT 0,
+  is_active INTEGER DEFAULT 1
+);
+`;
+
+async function addColumnIfMissing(table: string, column: string, def: string): Promise<void> {
+  try {
+    await client.execute(`ALTER TABLE ${table} ADD COLUMN ${column} ${def}`);
+  } catch {
+    // Column already exists — ignore
+  }
+}
+
+export async function initDatabase(): Promise<void> {
+  const tursoUrl = process.env.TURSO_DATABASE_URL;
+  const tursoToken = process.env.TURSO_AUTH_TOKEN;
+
+  if (tursoUrl && tursoToken) {
+    // Production: Turso cloud SQLite
+    client = createClient({ url: tursoUrl, authToken: tursoToken });
+    console.log('[DB] Connected to Turso cloud database');
+  } else {
+    // Development: local SQLite file
+    const dbPath = process.env.DB_PATH || './data/app.db';
+    const dbDir = path.dirname(dbPath);
+    if (!fs.existsSync(dbDir)) {
+      fs.mkdirSync(dbDir, { recursive: true });
+    }
+    client = createClient({ url: `file:${path.resolve(dbPath)}` });
+    console.log('[DB] Using local SQLite file:', dbPath);
+  }
+
+  // Create tables — split on semicolons to execute one at a time (libsql requirement)
+  const statements = CREATE_TABLES
+    .split(';')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+
+  for (const sql of statements) {
+    await client.execute(sql);
+  }
+
+  // Migrations for existing databases
+  await addColumnIfMissing('users', 'role', "TEXT DEFAULT 'user'");
+  await addColumnIfMissing('users', 'banned_until', 'DATETIME');
+  await addColumnIfMissing('users', 'country_code', 'TEXT');
+  await addColumnIfMissing('users', 'bio', 'TEXT');
+  await addColumnIfMissing('stories', 'language', "TEXT DEFAULT 'cmn'");
+  await addColumnIfMissing('stories', 'country_code', 'TEXT');
+  await addColumnIfMissing('stories', 'like_count', 'INTEGER DEFAULT 0');
+  await addColumnIfMissing('comments', 'like_count', 'INTEGER DEFAULT 0');
+  await addColumnIfMissing('comments', 'user_id', 'INTEGER');
+  await addColumnIfMissing('comments', 'is_hidden', 'INTEGER DEFAULT 0');
+  await addColumnIfMissing('orders', 'total_cents', 'INTEGER');
+  await addColumnIfMissing('orders', 'payment_provider', 'TEXT');
+  await addColumnIfMissing('orders', 'payment_id', 'TEXT');
+  await addColumnIfMissing('orders', 'metadata', 'TEXT');
+  await addColumnIfMissing('orders', 'updated_at', 'DATETIME');
+  await addColumnIfMissing('orders', 'coupon_code', 'TEXT');
+
+  // Seed default products if none exist
+  const productCountResult = await client.execute('SELECT COUNT(*) as count FROM products');
+  const productCount = Number((productCountResult.rows[0] as any).count);
+  if (productCount === 0) {
+    await client.batch([
+      { sql: "INSERT INTO products (name, type, price_cents, music_limit, description) VALUES ('按次付费', 'per_use', 100, 1, '1次音乐生成')" },
+      { sql: "INSERT INTO products (name, type, price_cents, music_limit, description) VALUES ('月度会员', 'monthly', 3000, 60, '30天内60次音乐生成')" },
+      { sql: "INSERT INTO products (name, type, price_cents, music_limit, description) VALUES ('年度会员', 'yearly', 28800, NULL, '365天内无限次音乐生成')" },
+    ], 'write');
+  }
+
+  console.log('[DB] Database initialized');
+}
+
+export async function closeDatabase(): Promise<void> {
+  if (client) {
+    client.close();
   }
 }

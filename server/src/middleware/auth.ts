@@ -1,35 +1,44 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { getDatabase } from '../models/database.js';
+import { dbGet } from '../models/database.js';
 
 export interface AuthRequest extends Request {
   userId?: number;
 }
 
-export function authMiddleware(
+export async function authMiddleware(
   req: AuthRequest,
   res: Response,
   next: NextFunction
-): void {
+): Promise<void> {
   const authHeader = req.headers.authorization;
+  const queryToken = typeof req.query.token === 'string' ? req.query.token : null;
+  const rawToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : queryToken;
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!rawToken) {
     res.status(401).json({ error: 'No token provided' });
     return;
   }
 
-  const token = authHeader.substring(7);
   const secret = process.env.JWT_SECRET;
-
   if (!secret) {
     res.status(500).json({ error: 'Server configuration error' });
     return;
   }
 
+  let decoded: { userId: number };
   try {
-    const decoded = jwt.verify(token, secret) as { userId: number };
-    const db = getDatabase();
-    const user = db.prepare('SELECT id, banned_until FROM users WHERE id = ?').get(decoded.userId) as { id: number; banned_until: string | null } | undefined;
+    decoded = jwt.verify(rawToken, secret) as { userId: number };
+  } catch {
+    res.status(401).json({ error: 'Invalid token' });
+    return;
+  }
+
+  try {
+    const user = await dbGet<{ id: number; banned_until: string | null }>(
+      'SELECT id, banned_until FROM users WHERE id = ?',
+      [decoded.userId]
+    );
     if (!user) {
       res.status(401).json({ error: 'User not found' });
       return;
@@ -41,30 +50,27 @@ export function authMiddleware(
     req.userId = decoded.userId;
     next();
   } catch {
-    res.status(401).json({ error: 'Invalid token' });
+    res.status(500).json({ error: 'Database error' });
   }
 }
 
-export function optionalAuthMiddleware(
+export async function optionalAuthMiddleware(
   req: AuthRequest,
   _res: Response,
   next: NextFunction
-): void {
+): Promise<void> {
   const authHeader = req.headers.authorization;
-
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.substring(7);
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.slice(7);
     const secret = process.env.JWT_SECRET;
-
     if (secret) {
       try {
         const decoded = jwt.verify(token, secret) as { userId: number };
         req.userId = decoded.userId;
       } catch {
-        // Token invalid, continue as anonymous
+        // Invalid token — continue as anonymous
       }
     }
   }
-
   next();
 }

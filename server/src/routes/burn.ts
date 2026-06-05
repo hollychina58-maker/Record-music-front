@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { getDatabase } from '../models/database.js';
+import { dbGet, dbAll, dbRun, dbBatch } from '../models/database.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
@@ -7,74 +7,50 @@ const router = Router();
 const BURNED_CONTENT = '悲伤往事，没入尘烟，万载空悠，徒留悲伤';
 const MEMORIAL_COMMENT = '曾经来过的足迹，已入尘烟！';
 
-interface StoryRow {
-  id: number;
-  user_id: number | null;
-  title: string;
-  content: string;
-  metadata: string | null;
-  created_at: string;
-}
-
-interface BurnedRow {
-  id: number;
-  story_id: number;
-  burned_at: string;
-}
-
-router.post('/stories/:id/burn', authMiddleware, (req: AuthRequest, res: Response) => {
+router.post('/stories/:id/burn', authMiddleware, async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
-  const db = getDatabase();
 
-  const story = db.prepare('SELECT * FROM stories WHERE id = ?').get(id) as StoryRow | undefined;
-  if (!story) {
-    res.status(404).json({ error: 'Story not found' });
-    return;
+  const story = await dbGet<{ id: number; user_id: number | null; title: string; content: string }>(
+    'SELECT * FROM stories WHERE id = ?', [id]
+  );
+  if (!story) { res.status(404).json({ error: 'Story not found' }); return; }
+  if (story.user_id !== req.userId) { res.status(403).json({ error: 'You can only burn your own stories' }); return; }
+
+  const existingBurned = await dbGet('SELECT id FROM burned_stories WHERE story_id = ?', [id]);
+  if (existingBurned) { res.status(400).json({ error: 'Story already burned' }); return; }
+
+  // Delete all but the first comment
+  await dbRun(
+    'DELETE FROM comments WHERE story_id = ? AND id NOT IN (SELECT id FROM comments WHERE story_id = ? ORDER BY created_at ASC LIMIT 1)',
+    [id, id]
+  );
+
+  const remaining = await dbAll<{ id: number }>('SELECT id FROM comments WHERE story_id = ?', [id]);
+
+  // Execute burn atomically as a batch
+  const stmts: { sql: string; args: unknown[] }[] = [
+    { sql: 'UPDATE stories SET content = ? WHERE id = ?', args: [BURNED_CONTENT, id] },
+    { sql: 'INSERT INTO burned_stories (story_id) VALUES (?)', args: [id] },
+  ];
+
+  if (remaining.length > 0) {
+    stmts.push({
+      sql: 'UPDATE comments SET content = ?, author_name = ?, is_hidden = 0 WHERE id = ?',
+      args: [MEMORIAL_COMMENT, '岁月', remaining[0].id],
+    });
+  } else {
+    stmts.push({
+      sql: "INSERT INTO comments (story_id, author_name, content) VALUES (?, '岁月', ?)",
+      args: [id, MEMORIAL_COMMENT],
+    });
   }
 
-  if (story.user_id !== req.userId) {
-    res.status(403).json({ error: 'You can only burn your own stories' });
-    return;
-  }
+  await dbBatch(stmts);
 
-  const existingBurned = db.prepare('SELECT id FROM burned_stories WHERE story_id = ?').get(id);
-  if (existingBurned) {
-    res.status(400).json({ error: 'Story already burned' });
-    return;
-  }
+  const burnedStory = await dbGet('SELECT * FROM stories WHERE id = ?', [id]);
+  const burnedRecord = await dbGet<{ burned_at: string }>('SELECT * FROM burned_stories WHERE story_id = ?', [id]);
 
-  // All burn operations run in a single transaction — partial failure leaves no inconsistent state
-  db.transaction(() => {
-    db.prepare('UPDATE stories SET content = ? WHERE id = ?').run(BURNED_CONTENT, id);
-    db.prepare('INSERT INTO burned_stories (story_id) VALUES (?)').run(id);
-
-    // Keep only the first comment, overwrite it with the memorial text
-    db.prepare(
-      'DELETE FROM comments WHERE story_id = ? AND id NOT IN (SELECT id FROM comments WHERE story_id = ? ORDER BY created_at ASC LIMIT 1)'
-    ).run(id, id);
-
-    const remaining = db.prepare('SELECT id FROM comments WHERE story_id = ?').all(id) as { id: number }[];
-
-    if (remaining.length > 0) {
-      db.prepare('UPDATE comments SET content = ?, author_name = ?, is_hidden = 0 WHERE id = ?')
-        .run(MEMORIAL_COMMENT, '岁月', remaining[0].id);
-    } else {
-      // No prior comments — insert the memorial comment
-      db.prepare("INSERT INTO comments (story_id, author_name, content) VALUES (?, '岁月', ?)")
-        .run(id, MEMORIAL_COMMENT);
-    }
-  })();
-
-  const burnedStory = db.prepare('SELECT * FROM stories WHERE id = ?').get(id) as StoryRow | undefined;
-  const burnedRecord = db.prepare('SELECT * FROM burned_stories WHERE story_id = ?').get(id) as BurnedRow | undefined;
-
-  res.json({
-    data: {
-      ...burnedStory,
-      isBurned: true,
-      burnedAt: burnedRecord?.burned_at,
-    },
-  });
+  res.json({ data: { ...burnedStory, isBurned: true, burnedAt: burnedRecord?.burned_at } });
 });
 
 export default router;

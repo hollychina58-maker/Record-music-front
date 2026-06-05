@@ -98,9 +98,13 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-initDatabase();
-seedDefaultStory().catch((err) => {
-  console.error('[Seed] Fatal error seeding default story:', err instanceof Error ? err.message : err);
+initDatabase().then(() => {
+  seedDefaultStory().catch((err) => {
+    console.error('[Seed] Fatal error seeding default story:', err instanceof Error ? err.message : err);
+  });
+}).catch((err) => {
+  console.error('[DB] Fatal: failed to initialize database:', err instanceof Error ? err.message : err);
+  process.exit(1);
 });
 
 const server = app.listen(PORT, () => {
@@ -108,13 +112,11 @@ const server = app.listen(PORT, () => {
 });
 
 process.on('SIGTERM', () => {
-  closeDatabase();
-  server.close(() => process.exit(0));
+  closeDatabase().finally(() => server.close(() => process.exit(0)));
 });
 
 process.on('SIGINT', () => {
-  closeDatabase();
-  server.close(() => process.exit(0));
+  closeDatabase().finally(() => server.close(() => process.exit(0)));
 });
 
 export default app;

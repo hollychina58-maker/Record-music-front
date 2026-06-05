@@ -1,93 +1,56 @@
 import { Router, Request, Response } from 'express';
-import { getDatabase } from '../models/database.js';
+import { dbGet, dbAll, dbRun } from '../models/database.js';
 import { authMiddleware, optionalAuthMiddleware, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
 
-router.get('/stories/:storyId/comments', (req: Request, res: Response) => {
+router.get('/stories/:storyId/comments', async (req: Request, res: Response) => {
   const { storyId } = req.params;
-  const db = getDatabase();
 
-  const burned = db.prepare(
-    'SELECT id FROM burned_stories WHERE story_id = ?'
-  ).get(storyId);
-
+  const burned = await dbGet('SELECT id FROM burned_stories WHERE story_id = ?', [storyId]);
   if (burned) {
-    const comments = db.prepare(
-      'SELECT * FROM comments WHERE story_id = ? ORDER BY created_at ASC'
-    ).all(storyId);
-
-    const processedComments = comments.length > 1
-      ? [comments[0]]
-      : comments;
-
-    res.json({ data: processedComments });
+    const comments = await dbAll('SELECT * FROM comments WHERE story_id = ? ORDER BY created_at ASC', [storyId]);
+    res.json({ data: comments.length > 1 ? [comments[0]] : comments });
     return;
   }
 
-  const comments = db.prepare(
-    'SELECT * FROM comments WHERE story_id = ? AND is_hidden = 0 ORDER BY created_at DESC'
-  ).all(storyId);
-
+  const comments = await dbAll(
+    'SELECT * FROM comments WHERE story_id = ? AND is_hidden = 0 ORDER BY created_at DESC',
+    [storyId]
+  );
   res.json({ data: comments });
 });
 
-router.post('/stories/:storyId/comments', optionalAuthMiddleware, (req: AuthRequest, res: Response) => {
+router.post('/stories/:storyId/comments', optionalAuthMiddleware, async (req: AuthRequest, res: Response) => {
   const { storyId } = req.params;
   const { content } = req.body;
+  if (!content) { res.status(400).json({ error: 'content is required' }); return; }
 
-  if (!content) {
-    res.status(400).json({ error: 'content is required' });
-    return;
-  }
+  const story = await dbGet('SELECT id FROM stories WHERE id = ?', [storyId]);
+  if (!story) { res.status(404).json({ error: 'Story not found' }); return; }
 
-  const db = getDatabase();
-
-  const story = db.prepare('SELECT id FROM stories WHERE id = ?').get(storyId);
-  if (!story) {
-    res.status(404).json({ error: 'Story not found' });
-    return;
-  }
-
-  const user = db.prepare('SELECT nickname FROM users WHERE id = ?').get(req.userId as number) as { nickname: string } | undefined;
+  const user = req.userId
+    ? await dbGet<{ nickname: string }>('SELECT nickname FROM users WHERE id = ?', [req.userId])
+    : undefined;
   const authorName = user?.nickname || '匿名';
 
-  const result = db.prepare(
-    'INSERT INTO comments (story_id, user_id, author_name, content) VALUES (?, ?, ?, ?)'
-  ).run(storyId, req.userId ?? null, authorName, content);
-
-  const comment = db.prepare('SELECT * FROM comments WHERE id = ?').get(result.lastInsertRowid);
-
+  const result = await dbRun(
+    'INSERT INTO comments (story_id, user_id, author_name, content) VALUES (?, ?, ?, ?)',
+    [storyId, req.userId ?? null, authorName, content]
+  );
+  const comment = await dbGet('SELECT * FROM comments WHERE id = ?', [result.lastInsertRowid]);
   res.status(201).json({ data: comment });
 });
 
-router.delete('/comments/:id', authMiddleware, (req: AuthRequest, res: Response) => {
+router.delete('/comments/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
-  const db = getDatabase();
+  const comment = await dbGet<{ user_id: number | null }>('SELECT user_id FROM comments WHERE id = ?', [id]);
+  if (!comment) { res.status(404).json({ error: 'Comment not found' }); return; }
+  if (comment.user_id === null) { res.status(403).json({ error: 'Guest comments cannot be deleted by users' }); return; }
+  if (comment.user_id !== req.userId) { res.status(403).json({ error: 'You can only delete your own comments' }); return; }
 
-  const comment = db.prepare('SELECT * FROM comments WHERE id = ?').get(id) as { user_id: number | null } | undefined;
-  if (!comment) {
-    res.status(404).json({ error: 'Comment not found' });
-    return;
-  }
-
-  if (comment.user_id === null) {
-    res.status(403).json({ error: 'Guest comments cannot be deleted by users' });
-    return;
-  }
-
-  if (comment.user_id !== req.userId) {
-    res.status(403).json({ error: 'You can only delete your own comments' });
-    return;
-  }
-
-  const result = db.prepare('DELETE FROM comments WHERE id = ?').run(id);
-
-  if (result.changes === 0) {
-    res.status(404).json({ error: 'Comment not found' });
-    return;
-  }
-
+  const result = await dbRun('DELETE FROM comments WHERE id = ?', [id]);
+  if (result.changes === 0) { res.status(404).json({ error: 'Comment not found' }); return; }
   res.json({ message: 'Comment deleted successfully' });
 });
 
