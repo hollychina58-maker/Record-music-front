@@ -368,6 +368,58 @@
   margin-left: auto;
 }
 
+.provider-option--disabled {
+  opacity: 0.45;
+  cursor: pointer;
+}
+
+.provider-option--disabled:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.provider-soon {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.5px;
+  margin-left: auto;
+}
+
+.unavailable-toast {
+  background: rgba(255, 200, 100, 0.12);
+  border: 1px solid rgba(255, 200, 100, 0.3);
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-size: 13px;
+  color: #fdcb6e;
+  text-align: center;
+  animation: fadeInUp 0.2s ease;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.qr-cancel-btn {
+  margin-top: 4px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 13px;
+  padding: 8px 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.qr-cancel-btn:hover {
+  border-color: rgba(255, 107, 107, 0.4);
+  color: #ff7675;
+}
+
 /* ── Payment note ── */
 .payment-note {
   font-size: 12px;
