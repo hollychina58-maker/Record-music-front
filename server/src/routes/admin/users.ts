@@ -92,14 +92,14 @@ router.delete('/users/:id', authMiddleware, adminMiddleware, async (req: AuthReq
   if (!user) { res.status(404).json({ error: 'User not found' }); return; }
   if (user.role === 'admin') { res.status(400).json({ error: 'Cannot delete admin users' }); return; }
 
-  const stories = await dbAll<{ id: number }>('SELECT id FROM stories WHERE user_id = ?', [id]);
-  for (const s of stories) {
-    await dbRun("DELETE FROM likes WHERE target_type = 'comment' AND target_id IN (SELECT id FROM comments WHERE story_id = ?)", [s.id]);
-    await dbRun('DELETE FROM comments WHERE story_id = ?', [s.id]);
-    await dbRun('DELETE FROM music WHERE story_id = ?', [s.id]);
-    await dbRun('DELETE FROM music_usage WHERE story_id = ?', [s.id]);
-    await dbRun("DELETE FROM likes WHERE target_type = 'story' AND target_id = ?", [s.id]);
-  }
+  await dbRun(
+    "DELETE FROM likes WHERE target_type = 'comment' AND target_id IN (SELECT id FROM comments WHERE story_id IN (SELECT id FROM stories WHERE user_id = ?))",
+    [id]
+  );
+  await dbRun('DELETE FROM comments WHERE story_id IN (SELECT id FROM stories WHERE user_id = ?)', [id]);
+  await dbRun('DELETE FROM music_usage WHERE story_id IN (SELECT id FROM stories WHERE user_id = ?)', [id]);
+  await dbRun('DELETE FROM music WHERE story_id IN (SELECT id FROM stories WHERE user_id = ?)', [id]);
+  await dbRun("DELETE FROM likes WHERE target_type = 'story' AND target_id IN (SELECT id FROM stories WHERE user_id = ?)", [id]);
   await dbRun('DELETE FROM stories WHERE user_id = ?', [id]);
   await dbRun('DELETE FROM comments WHERE user_id = ?', [id]);
   await dbRun('DELETE FROM subscriptions WHERE user_id = ?', [id]);

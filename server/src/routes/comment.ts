@@ -21,10 +21,15 @@ router.get('/stories/:storyId/comments', async (req: Request, res: Response) => 
   res.json({ data: comments });
 });
 
+const MAX_COMMENT_LENGTH = 2000;
+
 router.post('/stories/:storyId/comments', optionalAuthMiddleware, async (req: AuthRequest, res: Response) => {
   const { storyId } = req.params;
   const { content } = req.body;
   if (!content) { res.status(400).json({ error: 'content is required' }); return; }
+  if (typeof content !== 'string' || content.length > MAX_COMMENT_LENGTH) {
+    res.status(400).json({ error: `评论内容不能超过 ${MAX_COMMENT_LENGTH} 个字符` }); return;
+  }
 
   const story = await dbGet('SELECT id FROM stories WHERE id = ?', [storyId]);
   if (!story) { res.status(404).json({ error: 'Story not found' }); return; }

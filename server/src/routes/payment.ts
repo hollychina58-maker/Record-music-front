@@ -133,10 +133,13 @@ router.post('/orders', authMiddleware, async (req: AuthRequest, res: Response) =
              ORDER BY created_at DESC LIMIT 1`,
             [userId]
           );
-          const paidMonthly = lastMonthlyOrder
+          const rawPaid = lastMonthlyOrder
             ? (lastMonthlyOrder.total_cents ?? Math.round(lastMonthlyOrder.amount * 100))
             : activeSub.price_cents;
-          totalCents = Math.max(0, totalCents - paidMonthly);
+          // Cap deduction at undiscounted monthly price to prevent coupon-stacking exploit
+          const paidMonthly = Math.min(rawPaid, activeSub.price_cents);
+          // Minimum charge 1 CNY (100 cents) to prevent free upgrades via coupon abuse
+          totalCents = Math.max(100, totalCents - paidMonthly);
           isUpgrade = true;
         } else {
           res.status(400).json({
@@ -282,7 +285,7 @@ async function activateOrder(order: OrderRow): Promise<boolean> {
         // Subscription plan (monthly / yearly)
         const days = product.type === 'yearly' ? 365 : 30;
         const existing = await dbGet(
-          'SELECT id FROM subscriptions WHERE user_id = ?',
+          "SELECT id FROM subscriptions WHERE user_id = ? AND status = 'active'",
           [order.user_id]
         );
         // Carry over any remaining free credits into the new subscription limit

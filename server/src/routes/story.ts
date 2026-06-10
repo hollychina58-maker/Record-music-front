@@ -9,6 +9,9 @@ const router = Router();
 router.get('/', async (req: Request, res: Response) => {
   const language = req.query.language as string | undefined;
   const countryCode = req.query.countryCode as string | undefined;
+  const page = Math.max(1, parseInt(String(req.query.page || '1'), 10));
+  const limit = Math.min(50, Math.max(1, parseInt(String(req.query.limit || '20'), 10)));
+  const offset = (page - 1) * limit;
 
   const conditions: string[] = ['bs.story_id IS NULL'];
   const params: unknown[] = [];
@@ -23,8 +26,9 @@ router.get('/', async (req: Request, res: Response) => {
      LEFT JOIN burned_stories bs ON s.id = bs.story_id
      LEFT JOIN comments c ON s.id = c.story_id
      WHERE ${where}
-     GROUP BY s.id ORDER BY (s.like_count + COUNT(c.id) * 2) DESC, s.created_at DESC`,
-    params
+     GROUP BY s.id ORDER BY (s.like_count + COUNT(c.id) * 2) DESC, s.created_at DESC
+     LIMIT ? OFFSET ?`,
+    [...params, limit, offset]
   );
 
   if (stories.length === 0 && countryCode) {
@@ -34,11 +38,13 @@ router.get('/', async (req: Request, res: Response) => {
        LEFT JOIN burned_stories bs ON s.id = bs.story_id
        LEFT JOIN comments c ON s.id = c.story_id
        WHERE bs.story_id IS NULL AND s.user_id IS NULL
-       GROUP BY s.id ORDER BY (s.like_count + COUNT(c.id) * 2) DESC, s.created_at DESC`
+       GROUP BY s.id ORDER BY (s.like_count + COUNT(c.id) * 2) DESC, s.created_at DESC
+       LIMIT ? OFFSET ?`,
+      [limit, offset]
     );
   }
 
-  res.json({ data: stories });
+  res.json({ data: stories, meta: { page, limit } });
 });
 
 router.get('/:id', async (req: Request, res: Response) => {
@@ -72,6 +78,8 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
 
 router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
   const { title, content, metadata } = req.body;
+  if (!title || !content) { res.status(400).json({ error: 'title and content are required' }); return; }
+
   const story = await dbGet<{ user_id: number | null }>('SELECT user_id FROM stories WHERE id = ?', [req.params.id]);
   if (!story) { res.status(404).json({ error: 'Story not found' }); return; }
   if (story.user_id !== req.userId) { res.status(403).json({ error: 'Not authorized' }); return; }

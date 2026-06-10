@@ -110,23 +110,37 @@ router.post('/generate', authMiddleware, async (req: AuthRequest, res: Response)
   }
 });
 
-router.get('/by-story/:storyId', authMiddleware, async (_req: AuthRequest, res: Response) => {
+router.get('/by-story/:storyId', authMiddleware, async (req: AuthRequest, res: Response) => {
+  const storyRow = await dbGet<{ user_id: number | null }>(
+    'SELECT user_id FROM stories WHERE id = ?', [req.params.storyId]
+  );
+  if (!storyRow) { res.status(404).json({ error: 'Story not found' }); return; }
+  if (storyRow.user_id !== req.userId) { res.status(403).json({ error: 'Access denied' }); return; }
+
   const records = await dbAll(
     'SELECT id, story_id, status, style, created_at FROM music WHERE story_id = ? ORDER BY created_at DESC',
-    [_req.params.storyId]
+    [req.params.storyId]
   );
   res.json({ data: records });
 });
 
 router.get('/status/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
-  const music = await dbGet<any>('SELECT id, status, file_path, style FROM music WHERE id = ?', [req.params.id]);
+  const music = await dbGet<any>(
+    `SELECT m.id, m.status, m.file_path, m.style, s.user_id
+     FROM music m JOIN stories s ON m.story_id = s.id WHERE m.id = ?`, [req.params.id]
+  );
   if (!music) { res.status(404).json({ error: 'Music not found' }); return; }
+  if (music.user_id !== req.userId) { res.status(403).json({ error: 'Access denied' }); return; }
   res.json({ id: music.id, status: music.status, filePath: music.file_path, style: music.style });
 });
 
 router.get('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
-  const music = await dbGet<any>('SELECT * FROM music WHERE id = ?', [req.params.id]);
+  const music = await dbGet<any>(
+    `SELECT m.*, s.user_id as story_user_id FROM music m JOIN stories s ON m.story_id = s.id WHERE m.id = ?`,
+    [req.params.id]
+  );
   if (!music) { res.status(404).json({ error: 'Music not found' }); return; }
+  if (music.story_user_id !== req.userId) { res.status(403).json({ error: 'Access denied' }); return; }
   res.json({ data: music });
 });
 
@@ -137,11 +151,23 @@ router.get('/:id/stream', async (req: Request, res: Response) => {
   const rawToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : queryToken;
 
   if (!rawToken || !secret) { res.status(401).json({ error: 'Authentication required' }); return; }
-  try { jwt.verify(rawToken, secret); } catch { res.status(401).json({ error: 'Invalid token' }); return; }
+  let requestUserId: number;
+  try {
+    const decoded = jwt.verify(rawToken, secret) as { userId: number };
+    requestUserId = decoded.userId;
+  } catch { res.status(401).json({ error: 'Invalid token' }); return; }
 
   try {
     const music = await dbGet<any>('SELECT m.*, m.story_id FROM music m WHERE m.id = ?', [req.params.id]);
     if (!music?.file_path) { res.status(404).json({ error: 'Music not available' }); return; }
+
+    // Ownership check: only the story's author can stream its music
+    const storyRow = await dbGet<{ user_id: number | null }>(
+      'SELECT user_id FROM stories WHERE id = ?', [music.story_id]
+    );
+    if (!storyRow || storyRow.user_id !== requestUserId) {
+      res.status(403).json({ error: 'Access denied' }); return;
+    }
 
     const burned = await dbGet('SELECT id FROM burned_stories WHERE story_id = ?', [music.story_id]);
     if (burned) { res.status(403).json({ error: 'This story has been burned' }); return; }

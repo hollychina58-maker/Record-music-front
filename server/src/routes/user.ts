@@ -16,20 +16,27 @@ router.post('/auth/register', async (req: Request, res: Response) => {
   const existing = await dbGet('SELECT id FROM users WHERE email = ?', [email]);
   if (existing) { res.status(409).json({ error: 'Email already exists' }); return; }
 
-  const countRow = await dbGet<{ count: number }>('SELECT COUNT(*) as count FROM users');
-  const role = (countRow?.count ?? 0) === 0 ? 'admin' : 'user';
   const passwordHash = await bcrypt.hash(password, 10);
 
   const ip = (req.headers['x-forwarded-for'] as string || req.ip || '127.0.0.1').split(',')[0].trim();
   const geo = lookupGeo(ip);
 
+  // Atomic first-user admin promotion — CASE WHEN inside the INSERT avoids the COUNT+INSERT race condition
   const result = await dbRun(
-    'INSERT INTO users (email, password_hash, nickname, free_music_count, role, country_code) VALUES (?, ?, ?, 3, ?, ?)',
-    [email, passwordHash, nickname || email.split('@')[0], role, geo.countryCode || null]
+    `INSERT INTO users (email, password_hash, nickname, free_music_count, role, country_code)
+     SELECT ?, ?, ?, 3,
+       CASE WHEN (SELECT COUNT(*) FROM users) = 0 THEN 'admin' ELSE 'user' END,
+       ?`,
+    [email, passwordHash, nickname || email.split('@')[0], geo.countryCode || null]
   );
   const userId = result.lastInsertRowid;
 
-  const token = jwt.sign({ userId }, process.env.JWT_SECRET!, { expiresIn: '7d' as const });
+  const insertedUser = await dbGet<{ role: string }>('SELECT role FROM users WHERE id = ?', [userId]);
+  const role = insertedUser?.role ?? 'user';
+
+  const secret = process.env.JWT_SECRET;
+  if (!secret) { res.status(500).json({ error: 'Server configuration error' }); return; }
+  const token = jwt.sign({ userId }, secret, { expiresIn: '7d' as const });
   res.status(201).json({
     success: true,
     data: { userId, email, nickname: nickname || email.split('@')[0], role, freeMusicCount: 3, token },
@@ -46,7 +53,9 @@ router.post('/auth/login', async (req: Request, res: Response) => {
   const validPassword = await bcrypt.compare(password, user.password_hash);
   if (!validPassword) { res.status(401).json({ error: 'Invalid credentials' }); return; }
 
-  const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, { expiresIn: '7d' as const });
+  const secret = process.env.JWT_SECRET;
+  if (!secret) { res.status(500).json({ error: 'Server configuration error' }); return; }
+  const token = jwt.sign({ userId: user.id }, secret, { expiresIn: '7d' as const });
 
   const sub = await dbGet<{ music_remaining: number | null }>(
     "SELECT music_remaining FROM subscriptions WHERE user_id = ? AND status = 'active' AND expires_at > datetime('now')",
@@ -65,7 +74,7 @@ router.post('/auth/login', async (req: Request, res: Response) => {
 
 router.get('/users/me', authMiddleware, async (req: Request, res: Response) => {
   const userId = (req as any).userId;
-  const user = await dbGet<any>('SELECT id, email, nickname, avatar, free_music_count, created_at FROM users WHERE id = ?', [userId]);
+  const user = await dbGet<any>('SELECT id, email, nickname, avatar, free_music_count, role, created_at FROM users WHERE id = ?', [userId]);
   if (!user) { res.status(404).json({ error: 'User not found' }); return; }
 
   const sub = await dbGet<{ music_remaining: number | null }>(
@@ -77,7 +86,7 @@ router.get('/users/me', authMiddleware, async (req: Request, res: Response) => {
     success: true,
     data: {
       id: user.id, email: user.email, nickname: user.nickname, avatar: user.avatar,
-      freeMusicCount: user.free_music_count, createdAt: user.created_at,
+      role: user.role, freeMusicCount: user.free_music_count, createdAt: user.created_at,
       hasActiveSubscription: !!sub, subscriptionMusicRemaining: sub?.music_remaining ?? null,
     },
   });
