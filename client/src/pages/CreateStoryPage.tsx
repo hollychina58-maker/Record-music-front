@@ -12,6 +12,7 @@ export function CreateStoryPage() {
   const user = useAuthStore(state => state.user);
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   const fetchCurrentUser = useAuthStore(state => state.fetchCurrentUser);
+  const updateUser = useAuthStore(state => state.updateUser);
   const { t } = useLanguage();
 
   const [title, setTitle] = useState('');
@@ -30,11 +31,9 @@ export function CreateStoryPage() {
     }
   }, [isAuthenticated, navigate]);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchCurrentUser();
-    }
-  }, [isAuthenticated, fetchCurrentUser]);
+  // Fetch on every mount so credit count is always fresh when entering this page.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { fetchCurrentUser(); }, []);
 
   if (!isAuthenticated) {
     return null;
@@ -83,11 +82,17 @@ export function CreateStoryPage() {
 
       if (withMusic && user) {
         try {
-          const { musicId } = await apiService.generateMusic(story.id, story.content, { musicType, musicMood, musicGenre });
+          const result = await apiService.generateMusic(story.id, story.content, { musicType, musicMood, musicGenre });
+          // Immediately sync the server-returned credit count into the store so both
+          // pages show the same value without waiting for the music poller to finish.
+          if (result.freeMusicCount !== null) {
+            updateUser({ freeMusicCount: result.freeMusicCount });
+          } else if (result.subscriptionRemaining !== null) {
+            updateUser({ subscriptionMusicRemaining: result.subscriptionRemaining });
+          }
           // Register in localStorage so App-level PendingMusicPoller tracks it.
-          // The banner will appear automatically when generation completes.
           const pending = JSON.parse(localStorage.getItem('mo_pending_music') || '[]');
-          pending.push({ musicId, storyId: story.id, createdAt: Date.now() });
+          pending.push({ musicId: result.musicId, storyId: story.id, createdAt: Date.now() });
           localStorage.setItem('mo_pending_music', JSON.stringify(pending));
           navigate(`/story/${story.id}`);
         } catch (err: any) {
