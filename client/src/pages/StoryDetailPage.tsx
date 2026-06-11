@@ -195,6 +195,13 @@ export function StoryDetailPage() {
               day: 'numeric',
             })}
           </time>
+          {story.tags && story.tags.length > 0 && (
+            <div className="story-tags">
+              {story.tags.map(tag => (
+                <span key={tag} className="story-tag">{tag}</span>
+              ))}
+            </div>
+          )}
           <div className="story-actions-row">
             <LikeButton
               targetType="story"

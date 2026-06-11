@@ -22,7 +22,6 @@ export function CreateStoryPage() {
   const [fieldErrors, setFieldErrors] = useState<{ title?: string; content?: string }>({});
   const [withMusic, setWithMusic] = useState(false);
   const [musicType, setMusicType] = useState<'instrumental' | 'song'>('instrumental');
-  const [musicMood, setMusicMood] = useState('sorrow');
   const [musicGenre, setMusicGenre] = useState('chinese_folk');
 
   useEffect(() => {
@@ -82,7 +81,7 @@ export function CreateStoryPage() {
 
       if (withMusic && user) {
         try {
-          const result = await apiService.generateMusic(story.id, story.content, { musicType, musicMood, musicGenre });
+          const result = await apiService.generateMusic(story.id, story.content, { musicType, musicGenre });
           // Immediately sync the server-returned credit count into the store so both
           // pages show the same value without waiting for the music poller to finish.
           if (result.freeMusicCount !== null) {
@@ -214,19 +213,6 @@ export function CreateStoryPage() {
                   <select value={musicType} onChange={(e) => setMusicType(e.target.value as 'instrumental' | 'song')}>
                     <option value="instrumental">{t('create.instrumental')}</option>
                     <option value="song">{t('create.song')}</option>
-                  </select>
-                </div>
-                <div className="music-option">
-                  <label>{t('create.musicMood')}</label>
-                  <select value={musicMood} onChange={(e) => setMusicMood(e.target.value)}>
-                    <option value="sorrow">{t('create.mood.sorrow')}</option>
-                    <option value="joy">{t('create.mood.joy')}</option>
-                    <option value="passion">{t('create.mood.passion')}</option>
-                    <option value="peace">{t('create.mood.peace')}</option>
-                    <option value="mystery">{t('create.mood.mystery')}</option>
-                    <option value="nostalgia">{t('create.mood.nostalgia')}</option>
-                    <option value="warmth">{t('create.mood.warmth')}</option>
-                    <option value="loneliness">{t('create.mood.loneliness')}</option>
                   </select>
                 </div>
                 <div className="music-option">

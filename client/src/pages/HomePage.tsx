@@ -115,6 +115,13 @@ export function HomePage() {
                   <StoryPoster title={story.title} content={story.content} index={i} />
                   <div className="card-info">
                     <h2 className="card-title">{story.title}</h2>
+                    {story.tags && story.tags.length > 0 && (
+                      <div className="card-tags">
+                        {story.tags.slice(0, 3).map(tag => (
+                          <span key={tag} className="ink-card__tag">{tag}</span>
+                        ))}
+                      </div>
+                    )}
                     <p className="card-excerpt">
                       {story.content.length > 80 ? story.content.slice(0, 80) + '…' : story.content}
                     </p>

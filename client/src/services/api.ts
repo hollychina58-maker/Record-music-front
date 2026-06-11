@@ -15,6 +15,8 @@ export interface Story {
   isBurned?: boolean;
   comment_count?: number;
   like_count?: number;
+  tags: string[] | null;
+  tone: string | null;
 }
 
 export interface Comment {
