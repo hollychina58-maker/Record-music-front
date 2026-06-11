@@ -17,6 +17,9 @@ export interface Story {
   like_count?: number;
   tags: string[] | null;
   tone: string | null;
+  author_nickname: string | null;
+  music_status: 'pending' | 'completed' | 'failed' | null;
+  music_type: 'instrumental' | 'song' | null;
 }
 
 export interface Comment {
@@ -66,10 +69,11 @@ class ApiService {
     );
   }
 
-  async getStories(options?: { language?: string | null; countryCode?: string | null }): Promise<Story[]> {
+  async getStories(options?: { language?: string | null; countryCode?: string | null; onlyMine?: boolean }): Promise<Story[]> {
     const parts: string[] = [];
     if (options?.language) parts.push(`language=${encodeURIComponent(options.language)}`);
     if (options?.countryCode) parts.push(`countryCode=${encodeURIComponent(options.countryCode)}`);
+    if (options?.onlyMine) parts.push('onlyMine=true');
     const qs = parts.length > 0 ? '?' + parts.join('&') : '';
     const response = await this.client.get<{ data: Story[] }>('/story' + qs);
     return response.data.data;
@@ -168,7 +172,7 @@ class ApiService {
   async generateMusic(
     storyId: number,
     text: string,
-    options?: { musicType?: string; musicMood?: string; musicGenre?: string }
+    options?: { musicType?: string; musicGenre?: string; lyricsMode?: 'story_as_lyrics' | 'ai_generated' }
   ): Promise<{ musicId: number; status: string; freeMusicCount: number | null; subscriptionRemaining: number | null }> {
     const response = await this.client.post<{ data: { musicId: number; status: string; freeMusicCount: number | null; subscriptionRemaining: number | null } }>(
       '/music/generate',

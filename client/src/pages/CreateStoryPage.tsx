@@ -22,6 +22,7 @@ export function CreateStoryPage() {
   const [fieldErrors, setFieldErrors] = useState<{ title?: string; content?: string }>({});
   const [withMusic, setWithMusic] = useState(false);
   const [musicType, setMusicType] = useState<'instrumental' | 'song'>('instrumental');
+  const [lyricsMode, setLyricsMode] = useState<'story_as_lyrics' | 'ai_generated'>('ai_generated');
   const [musicGenre, setMusicGenre] = useState('chinese_folk');
 
   useEffect(() => {
@@ -81,7 +82,11 @@ export function CreateStoryPage() {
 
       if (withMusic && user) {
         try {
-          const result = await apiService.generateMusic(story.id, story.content, { musicType, musicGenre });
+          const result = await apiService.generateMusic(story.id, story.content, {
+            musicType,
+            musicGenre,
+            ...(musicType === 'song' ? { lyricsMode } : {}),
+          });
           // Immediately sync the server-returned credit count into the store so both
           // pages show the same value without waiting for the music poller to finish.
           if (result.freeMusicCount !== null) {
@@ -215,6 +220,41 @@ export function CreateStoryPage() {
                     <option value="song">{t('create.song')}</option>
                   </select>
                 </div>
+
+                {musicType === 'song' && (
+                  <div className="music-option music-option--lyrics">
+                    <label>{t('create.lyricsMode')}</label>
+                    <div className="lyrics-mode-group">
+                      <label className={`lyrics-mode-choice${lyricsMode === 'story_as_lyrics' ? ' lyrics-mode-choice--active' : ''}`}>
+                        <input
+                          type="radio"
+                          name="lyricsMode"
+                          value="story_as_lyrics"
+                          checked={lyricsMode === 'story_as_lyrics'}
+                          onChange={() => setLyricsMode('story_as_lyrics')}
+                        />
+                        <span className="lyrics-mode-label">
+                          <strong>{t('create.lyricsMode.story')}</strong>
+                          <em>{t('create.lyricsMode.storyHint')}</em>
+                        </span>
+                      </label>
+                      <label className={`lyrics-mode-choice${lyricsMode === 'ai_generated' ? ' lyrics-mode-choice--active' : ''}`}>
+                        <input
+                          type="radio"
+                          name="lyricsMode"
+                          value="ai_generated"
+                          checked={lyricsMode === 'ai_generated'}
+                          onChange={() => setLyricsMode('ai_generated')}
+                        />
+                        <span className="lyrics-mode-label">
+                          <strong>{t('create.lyricsMode.ai')}</strong>
+                          <em>{t('create.lyricsMode.aiHint')}</em>
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                )}
+
                 <div className="music-option">
                   <label>{t('create.musicGenre')}</label>
                   <select value={musicGenre} onChange={(e) => setMusicGenre(e.target.value)}>

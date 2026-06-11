@@ -1,15 +1,21 @@
 import { Router, Request, Response } from 'express';
 import { dbGet, dbAll, dbRun } from '../models/database.js';
-import { authMiddleware, AuthRequest } from '../middleware/auth.js';
+import { authMiddleware, optionalAuthMiddleware, AuthRequest } from '../middleware/auth.js';
 import { detectLanguage } from '../services/language.js';
 import { lookupGeo } from '../services/geoip.js';
 import { analyzeStory } from '../services/storyAnalysis.js';
 
 const router = Router();
 
-router.get('/', async (req: Request, res: Response) => {
+function parseTags(raw: string | null): string[] | null {
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch { return []; }
+}
+
+router.get('/', optionalAuthMiddleware, async (req: AuthRequest, res: Response) => {
   const language = req.query.language as string | undefined;
   const countryCode = req.query.countryCode as string | undefined;
+  const onlyMine = req.query.onlyMine === 'true';
   const page = Math.max(1, parseInt(String(req.query.page || '1'), 10));
   const limit = Math.min(50, Math.max(1, parseInt(String(req.query.limit || '20'), 10)));
   const offset = (page - 1) * limit;
@@ -17,29 +23,57 @@ router.get('/', async (req: Request, res: Response) => {
   const conditions: string[] = ['bs.story_id IS NULL'];
   const params: unknown[] = [];
 
-  if (language) { conditions.push('s.language = ?'); params.push(language); }
-  if (countryCode) { conditions.push('(s.country_code = ? OR s.country_code IS NULL)'); params.push(countryCode); }
+  if (onlyMine && req.userId) {
+    conditions.push('s.user_id = ?');
+    params.push(req.userId);
+  } else {
+    if (language) { conditions.push('s.language = ?'); params.push(language); }
+    if (countryCode) { conditions.push('(s.country_code = ? OR s.country_code IS NULL)'); params.push(countryCode); }
+  }
 
   const where = conditions.join(' AND ');
-  let stories = await dbAll<any>(
-    `SELECT s.*, COUNT(c.id) as comment_count
-     FROM stories s
-     LEFT JOIN burned_stories bs ON s.id = bs.story_id
-     LEFT JOIN comments c ON s.id = c.story_id
-     WHERE ${where}
-     GROUP BY s.id ORDER BY (s.like_count + COUNT(c.id) * 2) DESC, s.created_at DESC
-     LIMIT ? OFFSET ?`,
-    [...params, limit, offset]
-  );
 
-  if (stories.length === 0 && countryCode) {
+  // Single query: join users for author nickname, left-join latest music for type+status badge
+  const storyQuery = `
+    SELECT s.*,
+           COUNT(DISTINCT c.id) as comment_count,
+           u.nickname as author_nickname,
+           m.status as music_status,
+           m.music_type as music_type
+    FROM stories s
+    LEFT JOIN burned_stories bs ON s.id = bs.story_id
+    LEFT JOIN comments c ON s.id = c.story_id
+    LEFT JOIN users u ON s.user_id = u.id
+    LEFT JOIN (
+      SELECT story_id, status, music_type,
+             ROW_NUMBER() OVER (PARTITION BY story_id ORDER BY created_at DESC) as rn
+      FROM music
+    ) m ON s.id = m.story_id AND m.rn = 1
+    WHERE ${where}
+    GROUP BY s.id ORDER BY (s.like_count + COUNT(DISTINCT c.id) * 2) DESC, s.created_at DESC
+    LIMIT ? OFFSET ?`;
+
+  let stories = await dbAll<any>(storyQuery, [...params, limit, offset]);
+
+  // Geo fallback: if no results with region filter, show unfiltered anonymous stories
+  if (stories.length === 0 && countryCode && !onlyMine) {
     stories = await dbAll<any>(
-      `SELECT s.*, COUNT(c.id) as comment_count
+      `SELECT s.*,
+              COUNT(DISTINCT c.id) as comment_count,
+              u.nickname as author_nickname,
+              m.status as music_status,
+              m.music_type as music_type
        FROM stories s
        LEFT JOIN burned_stories bs ON s.id = bs.story_id
        LEFT JOIN comments c ON s.id = c.story_id
+       LEFT JOIN users u ON s.user_id = u.id
+       LEFT JOIN (
+         SELECT story_id, status, music_type,
+                ROW_NUMBER() OVER (PARTITION BY story_id ORDER BY created_at DESC) as rn
+         FROM music
+       ) m ON s.id = m.story_id AND m.rn = 1
        WHERE bs.story_id IS NULL AND s.user_id IS NULL
-       GROUP BY s.id ORDER BY (s.like_count + COUNT(c.id) * 2) DESC, s.created_at DESC
+       GROUP BY s.id ORDER BY (s.like_count + COUNT(DISTINCT c.id) * 2) DESC, s.created_at DESC
        LIMIT ? OFFSET ?`,
       [limit, offset]
     );
@@ -47,16 +81,20 @@ router.get('/', async (req: Request, res: Response) => {
 
   const parsed = stories.map((s: any) => ({
     ...s,
-    tags: s.tags ? (() => { try { return JSON.parse(s.tags); } catch { return []; } })() : null,
+    tags: parseTags(s.tags),
   }));
   res.json({ data: parsed, meta: { page, limit } });
 });
 
 router.get('/:id', async (req: Request, res: Response) => {
-  const story = await dbGet<any>('SELECT * FROM stories WHERE id = ?', [req.params.id]);
+  const story = await dbGet<any>(
+    `SELECT s.*, u.nickname as author_nickname
+     FROM stories s LEFT JOIN users u ON s.user_id = u.id
+     WHERE s.id = ?`,
+    [req.params.id]
+  );
   if (!story) { res.status(404).json({ error: 'Story not found' }); return; }
-  const tags = story.tags ? (() => { try { return JSON.parse(story.tags); } catch { return []; } })() : null;
-  res.json({ data: { ...story, tags } });
+  res.json({ data: { ...story, tags: parseTags(story.tags) } });
 });
 
 router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {

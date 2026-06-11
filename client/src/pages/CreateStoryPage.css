@@ -390,6 +390,64 @@
   box-shadow: 0 0 0 2px rgba(15, 15, 15, 0.04);
 }
 
+/* Lyrics mode radio group */
+.music-option--lyrics {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.lyrics-mode-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.lyrics-mode-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(15, 15, 15, 0.08);
+  background: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.lyrics-mode-choice input[type="radio"] {
+  margin-top: 2px;
+  flex-shrink: 0;
+  accent-color: var(--ink-dark);
+}
+
+.lyrics-mode-choice--active {
+  border-color: var(--ink-medium);
+  background: rgba(15, 15, 15, 0.03);
+}
+
+.lyrics-mode-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lyrics-mode-label strong {
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  color: var(--ink-dark);
+  font-weight: 500;
+}
+
+.lyrics-mode-label em {
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  color: var(--ink-wash);
+  font-style: normal;
+  line-height: 1.4;
+}
+
 /* ===== Error ===== */
 .form-error {
   font-family: var(--font-ui);

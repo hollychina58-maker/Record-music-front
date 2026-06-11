@@ -40,7 +40,9 @@ async function processMusicAsync(
 
 router.post('/generate', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const { storyId, text, musicType, musicMood, musicGenre } = req.body;
+    // lyricsMode: 'story_as_lyrics' → use story text directly as lyrics (author wrote it as lyrics)
+    //             'ai_generated' (default) → AI extracts lyrics from story narrative
+    const { storyId, text, musicType, musicMood, musicGenre, lyricsMode } = req.body;
     if (!storyId || !text) { res.status(400).json({ error: 'storyId and text are required' }); return; }
 
     const story = await dbGet<{ id: number; tone: string | null }>('SELECT id, tone FROM stories WHERE id = ?', [storyId]);
@@ -84,16 +86,23 @@ router.post('/generate', authMiddleware, async (req: AuthRequest, res: Response)
     const musicOptions: MusicOptions = { musicType, musicMood: effectiveMood, musicGenre };
     const styleLabel = (effectiveMood && MOOD_LABELS[effectiveMood]) ? MOOD_LABELS[effectiveMood] : analyzeEmotion(text).style;
 
-    // For song mode, AI-rewrite the story into proper lyrics before sending to MiniMax
+    // Determine lyrics text for song mode
     let effectiveText = text;
     if (musicType === 'song') {
-      effectiveText = await extractLyrics(text, effectiveMood || 'peace').catch(() => text.slice(0, 200));
-      console.log('[Music] Song mode: AI-extracted lyrics length:', effectiveText.length);
+      if (lyricsMode === 'story_as_lyrics') {
+        // Author explicitly wrote story as lyrics — use directly (truncate if too long)
+        effectiveText = text.slice(0, 400);
+        console.log('[Music] Song mode: using story text as direct lyrics, length:', effectiveText.length);
+      } else {
+        // AI rewrites narrative into proper verse+chorus lyrics
+        effectiveText = await extractLyrics(text, effectiveMood || 'peace').catch(() => text.slice(0, 200));
+        console.log('[Music] Song mode: AI-extracted lyrics length:', effectiveText.length);
+      }
     }
 
     const musicRecord = await dbRun(
-      "INSERT INTO music (story_id, status, style) VALUES (?, 'pending', ?)",
-      [storyId, styleLabel]
+      "INSERT INTO music (story_id, status, style, music_type) VALUES (?, 'pending', ?, ?)",
+      [storyId, styleLabel, musicType || 'instrumental']
     );
     const musicId = musicRecord.lastInsertRowid;
 

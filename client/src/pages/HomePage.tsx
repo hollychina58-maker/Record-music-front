@@ -24,42 +24,61 @@ function StoryCardSkeleton({ index }: { index: number }) {
   );
 }
 
+function MusicBadge({ status, type }: { status: string | null; type: string | null }) {
+  if (!status || status === 'failed') return null;
+  if (status === 'pending') {
+    return <span className="music-badge music-badge--pending">♪ 生成中</span>;
+  }
+  // completed
+  if (type === 'song') return <span className="music-badge music-badge--song">♫ 歌曲</span>;
+  return <span className="music-badge music-badge--music">♪ 音乐</span>;
+}
+
 export function HomePage() {
   const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const [onlyMine, setOnlyMine] = useState(false);
   const { t } = useLanguage();
   const geo = useGeo();
 
-  useEffect(() => {
-    // Wait until geo is resolved; while loading show skeleton
-    if (geo.loading) {
-      setLoading(true);
-      return;
-    }
-
-    let cancelled = false;
+  const fetchStories = (mine: boolean) => {
     setLoading(true);
     setLoadError(false);
-
+    const opts = mine
+      ? { onlyMine: true }
+      : { language: geo.language, countryCode: geo.countryCode };
     apiService
-      .getStories({ language: geo.language, countryCode: geo.countryCode })
-      .then((data) => { if (!cancelled) setStories(data); })
-      .catch(() => { if (!cancelled) setLoadError(true); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-
-    return () => { cancelled = true; };
-  }, [geo.loading, geo.language, geo.countryCode]);
-
-  const loadStories = () => {
-    setLoading(true);
-    setLoadError(false);
-    apiService
-      .getStories({ language: geo.language, countryCode: geo.countryCode })
+      .getStories(opts)
       .then((data) => setStories(data))
       .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    if (geo.loading && !onlyMine) {
+      setLoading(true);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    setLoadError(false);
+    const opts = onlyMine
+      ? { onlyMine: true }
+      : { language: geo.language, countryCode: geo.countryCode };
+    apiService
+      .getStories(opts)
+      .then((data) => { if (!cancelled) setStories(data); })
+      .catch(() => { if (!cancelled) setLoadError(true); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [geo.loading, geo.language, geo.countryCode, onlyMine]);
+
+  const handleOnlyMineToggle = () => {
+    if (!isAuthenticated) return;
+    setOnlyMine((v) => !v);
   };
 
   return (
@@ -81,6 +100,18 @@ export function HomePage() {
         </div>
       </section>
 
+      {isAuthenticated && (
+        <div className="feed-filter">
+          <button
+            type="button"
+            className={`filter-btn${onlyMine ? ' filter-btn--active' : ''}`}
+            onClick={handleOnlyMineToggle}
+          >
+            {onlyMine ? t('home.filter.myStories') : t('home.filter.allStories')}
+          </button>
+        </div>
+      )}
+
       <main className="feed">
         {loading ? (
           <div className="feed-grid feed-grid--bento">
@@ -92,12 +123,12 @@ export function HomePage() {
           <div className="empty">
             <div className="empty-circle">!</div>
             <p className="empty-title">{t('home.error.loadFailed')}</p>
-            <button className="empty-link" onClick={loadStories}>{t('home.error.retry')}</button>
+            <button className="empty-link" onClick={() => fetchStories(onlyMine)}>{t('home.error.retry')}</button>
           </div>
         ) : stories.length === 0 ? (
           <div className="empty">
             <div className="empty-circle">墨</div>
-            <p className="empty-title">{t('home.empty.title')}</p>
+            <p className="empty-title">{onlyMine ? t('home.empty.myTitle') : t('home.empty.title')}</p>
             <p className="empty-hint">{t('home.empty.hint')}</p>
             <Link to="/create" className="empty-link">{t('home.empty.link')}</Link>
           </div>
@@ -114,7 +145,13 @@ export function HomePage() {
                 >
                   <StoryPoster title={story.title} content={story.content} index={i} />
                   <div className="card-info">
-                    <h2 className="card-title">{story.title}</h2>
+                    <div className="card-title-row">
+                      <h2 className="card-title">{story.title}</h2>
+                      <MusicBadge status={story.music_status ?? null} type={story.music_type ?? null} />
+                    </div>
+                    {story.author_nickname && (
+                      <span className="card-author">— {story.author_nickname}</span>
+                    )}
                     {story.tags && story.tags.length > 0 && (
                       <div className="card-tags">
                         {story.tags.slice(0, 3).map(tag => (
