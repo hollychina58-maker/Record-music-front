@@ -47,7 +47,8 @@ export function HomePage() {
   const fetchStories = (mine: boolean) => {
     setLoading(true);
     setLoadError(false);
-    const opts = mine ? { onlyMine: true } : { countryCode: geo.countryCode };
+    // Authenticated users see all stories; countryCode filter only for anonymous discovery
+    const opts = mine ? { onlyMine: true } : (!isAuthenticated ? { countryCode: geo.countryCode } : {});
     apiService
       .getStories(opts)
       .then((data) => setStories(data))
@@ -68,7 +69,7 @@ export function HomePage() {
     let cancelled = false;
     setLoading(true);
     setLoadError(false);
-    const opts = onlyMine ? { onlyMine: true } : { countryCode: geo.countryCode };
+    const opts = onlyMine ? { onlyMine: true } : (!isAuthenticated ? { countryCode: geo.countryCode } : {});
     apiService
       .getStories(opts)
       .then((data) => { if (!cancelled) setStories(data); })
