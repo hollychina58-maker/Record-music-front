@@ -19,6 +19,7 @@
   "home.loading": "Grinding ink...",
   "home.empty.title": "Every story begins",
   "home.empty.myTitle": "You haven't published any stories yet",
+  "home.empty.countryTitle": "No one from your country has shared a story with music yet — be the first",
   "home.empty.hint": "Take up the brush and write",
   "home.empty.link": "Start Writing",
   "home.error.loadFailed": "Failed to load",

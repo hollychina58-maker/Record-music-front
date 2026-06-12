@@ -47,8 +47,7 @@ export function HomePage() {
   const fetchStories = (mine: boolean) => {
     setLoading(true);
     setLoadError(false);
-    // Authenticated users see all stories; countryCode filter only for anonymous discovery
-    const opts = mine ? { onlyMine: true } : (!isAuthenticated ? { countryCode: geo.countryCode } : {});
+    const opts = mine ? { onlyMine: true } : { countryCode: geo.countryCode };
     apiService
       .getStories(opts)
       .then((data) => setStories(data))
@@ -69,7 +68,7 @@ export function HomePage() {
     let cancelled = false;
     setLoading(true);
     setLoadError(false);
-    const opts = onlyMine ? { onlyMine: true } : (!isAuthenticated ? { countryCode: geo.countryCode } : {});
+    const opts = onlyMine ? { onlyMine: true } : { countryCode: geo.countryCode };
     apiService
       .getStories(opts)
       .then((data) => { if (!cancelled) setStories(data); })
@@ -130,7 +129,13 @@ export function HomePage() {
         ) : stories.length === 0 ? (
           <div className="empty">
             <div className="empty-circle">墨</div>
-            <p className="empty-title">{onlyMine ? t('home.empty.myTitle') : t('home.empty.title')}</p>
+            <p className="empty-title">
+              {onlyMine
+                ? t('home.empty.myTitle')
+                : geo.countryCode
+                  ? t('home.empty.countryTitle')
+                  : t('home.empty.title')}
+            </p>
             <p className="empty-hint">{t('home.empty.hint')}</p>
             <Link to="/create" className="empty-link">{t('home.empty.link')}</Link>
           </div>

@@ -50,26 +50,7 @@ router.get('/', optionalAuthMiddleware, async (req: AuthRequest, res: Response) 
     GROUP BY s.id ORDER BY (s.like_count + COUNT(DISTINCT c.id) * 2) DESC, s.created_at DESC
     LIMIT ? OFFSET ?`;
 
-  let stories = await dbAll<any>(storyQuery, [...params, limit, offset]);
-
-  // Geo fallback: if no results with region filter, show unfiltered anonymous stories
-  if (stories.length === 0 && countryCode && !onlyMine) {
-    stories = await dbAll<any>(
-      `SELECT s.*,
-              COUNT(DISTINCT c.id) as comment_count,
-              u.nickname as author_nickname,
-              (SELECT status FROM music WHERE story_id = s.id ORDER BY created_at DESC LIMIT 1) as music_status,
-              (SELECT music_type FROM music WHERE story_id = s.id ORDER BY created_at DESC LIMIT 1) as music_type
-       FROM stories s
-       LEFT JOIN burned_stories bs ON s.id = bs.story_id
-       LEFT JOIN comments c ON s.id = c.story_id
-       LEFT JOIN users u ON s.user_id = u.id
-       WHERE bs.story_id IS NULL AND s.user_id IS NULL
-       GROUP BY s.id ORDER BY (s.like_count + COUNT(DISTINCT c.id) * 2) DESC, s.created_at DESC
-       LIMIT ? OFFSET ?`,
-      [limit, offset]
-    );
-  }
+  const stories = await dbAll<any>(storyQuery, [...params, limit, offset]);
 
   const parsed = stories.map((s: any) => ({
     ...s,

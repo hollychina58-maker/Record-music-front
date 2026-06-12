@@ -19,6 +19,7 @@
   "home.loading": "研墨中...",
   "home.empty.title": "万物皆有其故事",
   "home.empty.myTitle": "还没有发表过故事",
+  "home.empty.countryTitle": "您的国家目前还没有人发表故事并且创造音乐，期待你是第一个",
   "home.empty.hint": "提笔落墨，记录此刻",
   "home.empty.link": "开始书写",
   "home.error.loadFailed": "加载失败",

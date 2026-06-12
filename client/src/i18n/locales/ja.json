@@ -21,6 +21,7 @@
   "home.loading": "墨を磨っています...",
   "home.empty.title": "すべての瞬間に物語がある",
   "home.empty.myTitle": "まだ投稿した物語がありません",
+  "home.empty.countryTitle": "あなたの国からはまだ誰も音楽つきの物語を投稿していません — 最初の一人になりましょう",
   "home.empty.hint": "筆を執り、今を記録しよう",
   "home.empty.link": "書き始める",
   "home.error.loadFailed": "読み込み失敗",
