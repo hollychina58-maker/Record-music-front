@@ -132,12 +132,8 @@ router.post('/generate', authMiddleware, async (req: AuthRequest, res: Response)
 });
 
 router.get('/by-story/:storyId', authMiddleware, async (req: AuthRequest, res: Response) => {
-  const storyRow = await dbGet<{ user_id: number | null }>(
-    'SELECT user_id FROM stories WHERE id = ?', [req.params.storyId]
-  );
-  if (!storyRow) { res.status(404).json({ error: 'Story not found' }); return; }
-  if (storyRow.user_id !== req.userId) { res.status(403).json({ error: 'Access denied' }); return; }
-
+  // Metadata-only — any authenticated user can see a story's music info.
+  // Actual streaming/download is gated in /stream and /download endpoints.
   const records = await dbAll(
     'SELECT id, story_id, status, style, created_at FROM music WHERE story_id = ? ORDER BY created_at DESC',
     [req.params.storyId]
