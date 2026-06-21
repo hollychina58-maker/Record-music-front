@@ -326,9 +326,15 @@
   }
 
   .music-section {
+    position: relative; /* kill sticky on mobile — prevents iOS viewport-jump flicker */
+    bottom: auto;
     padding: 8px var(--space-4);
     margin: var(--space-10) calc(-1 * var(--space-4)) 0;
     width: calc(100% + var(--space-4) * 2);
+    /* Disable expensive backdrop-filter on mobile for smooth scrolling */
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--paper-cream);
   }
 }
 
