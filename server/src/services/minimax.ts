@@ -330,3 +330,59 @@ export async function downloadMusicFile(fileUrl: string, storyId: number): Promi
 
   return filePath;
 }
+
+/** Build an AI image prompt from story analysis */
+export function buildCoverPrompt(tone: string | null, tags: string[] | null, text: string): string {
+  const moodMap: Record<string, string> = {
+    sorrow: '悲伤', joy: '喜悦', passion: '激情', peace: '平静',
+    mystery: '神秘', nostalgia: '怀旧', warmth: '温暖', loneliness: '孤独',
+  };
+  const moodCN = tone && moodMap[tone] ? moodMap[tone] : tone || '平静';
+
+  const tagPart = tags && tags.length > 0 ? tags.join('、') : '';
+  const textSnippet = text.slice(0, 400);
+
+  return [
+    '中国水墨画风格插画，意境深远，留白构图，',
+    `基调：${moodCN}`,
+    tagPart ? `，元素：${tagPart}` : '',
+    `，意境：${textSnippet}，`,
+    '柔和光线，雅致色调，适合文学故事封面',
+  ].join('');
+}
+
+/** Generate cover image via MiniMax Image-01 */
+export async function generateCoverImage(prompt: string): Promise<{ imageUrl: string }> {
+  const apiKey = process.env.MINIMAX_API_KEY;
+  if (!apiKey) throw new Error('MiniMax API credentials not configured');
+
+  const baseUrl = process.env.MINIMAX_API_URL || 'https://api.minimaxi.com/v1';
+
+  const payload = {
+    model: 'image-01',
+    prompt,
+    n: 1,
+    size: '1024x1024',
+    response_format: 'url',
+  };
+
+  const response = await axios.post<{
+    data?: { url?: string };
+    base_resp?: { status_code: number; status_msg: string };
+  }>(`${baseUrl}/image_generation`, payload, {
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    timeout: 60000,
+  });
+
+  if (response.data.base_resp && response.data.base_resp.status_code !== 0) {
+    throw new Error(response.data.base_resp.status_msg || 'MiniMax image API error');
+  }
+
+  const imageUrl = response.data.data?.url;
+  if (!imageUrl) throw new Error('No image URL in response');
+
+  return { imageUrl };
+}

@@ -20,6 +20,8 @@ export interface Story {
   author_nickname: string | null;
   music_status: 'pending' | 'completed' | 'failed' | null;
   music_type: 'instrumental' | 'song' | null;
+  cover_image: string | null;
+  cover_prompt: string | null;
 }
 
 export interface Comment {
@@ -120,6 +122,15 @@ class ApiService {
   async burnStory(id: number): Promise<Story> {
     const response = await this.client.post<{ data: Story }>('/stories/' + id + '/burn');
     return response.data.data;
+  }
+
+  async generateCover(storyId: number): Promise<{ coverStatus: string }> {
+    const response = await this.client.post<{ data: { coverStatus: string } }>('/story/' + storyId + '/generate-cover');
+    return response.data.data;
+  }
+
+  async deleteCover(storyId: number): Promise<void> {
+    await this.client.delete('/story/' + storyId + '/cover');
   }
 
   async toggleLike(targetType: 'story' | 'comment', targetId: number): Promise<{ liked: boolean; likeCount: number }> {

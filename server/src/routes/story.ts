@@ -3,6 +3,7 @@ import { dbGet, dbAll, dbRun } from '../models/database.js';
 import { authMiddleware, optionalAuthMiddleware, AuthRequest } from '../middleware/auth.js';
 import { detectLanguage } from '../services/language.js';
 import { lookupGeo } from '../services/geoip.js';
+import { generateCoverImage, buildCoverPrompt } from '../services/minimax.js';
 import { analyzeStory } from '../services/storyAnalysis.js';
 
 const router = Router();
@@ -120,6 +121,51 @@ router.delete('/:id', authMiddleware, async (req: AuthRequest, res: Response) =>
 
   await dbRun('DELETE FROM stories WHERE id = ?', [req.params.id]);
   res.json({ message: 'Story deleted successfully' });
+});
+
+// Async cover image generation helper
+async function processCoverAsync(storyId: number, text: string, tone: string | null, tags: string[] | null) {
+  try {
+    const prompt = buildCoverPrompt(tone, tags, text);
+    await dbRun('UPDATE stories SET cover_prompt = ? WHERE id = ?', [prompt, storyId]);
+
+    const result = await generateCoverImage(prompt);
+    await dbRun('UPDATE stories SET cover_image = ? WHERE id = ?', [result.imageUrl, storyId]);
+    console.log('[Cover] Image generated for story', storyId);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown';
+    console.error('[Cover] Generation failed for story', storyId, ':', message);
+    // Set prompt as null on failure so user can retry
+    await dbRun('UPDATE stories SET cover_prompt = NULL WHERE id = ?', [storyId]);
+  }
+}
+
+// Generate cover image for a story (async)
+router.post('/:id/generate-cover', authMiddleware, async (req: AuthRequest, res: Response) => {
+  const story = await dbGet<{ id: number; user_id: number | null; content: string; tone: string | null; tags: string | null }>(
+    'SELECT id, user_id, content, tone, tags FROM stories WHERE id = ?', [req.params.id]
+  );
+  if (!story) { res.status(404).json({ error: 'Story not found' }); return; }
+  if (story.user_id !== req.userId) { res.status(403).json({ error: 'Not authorized' }); return; }
+
+  const tags: string[] | null = story.tags ? (() => { try { return JSON.parse(story.tags); } catch { return null; } })() : null;
+
+  // Fire-and-forget async generation
+  processCoverAsync(story.id, story.content, story.tone, tags);
+
+  res.status(202).json({ data: { coverStatus: 'pending' } });
+});
+
+// Delete cover image (author only)
+router.delete('/:id/cover', authMiddleware, async (req: AuthRequest, res: Response) => {
+  const story = await dbGet<{ user_id: number | null }>(
+    'SELECT user_id FROM stories WHERE id = ?', [req.params.id]
+  );
+  if (!story) { res.status(404).json({ error: 'Story not found' }); return; }
+  if (story.user_id !== req.userId) { res.status(403).json({ error: 'Not authorized' }); return; }
+
+  await dbRun('UPDATE stories SET cover_image = NULL, cover_prompt = NULL WHERE id = ?', [req.params.id]);
+  res.json({ message: 'Cover image deleted' });
 });
 
 export default router;

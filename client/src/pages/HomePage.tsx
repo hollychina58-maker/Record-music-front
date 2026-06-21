@@ -150,7 +150,13 @@ export function HomePage() {
                   className={cardClass}
                   style={{ animationDelay: `${0.1 + i * 0.06}s` }}
                 >
-                  <StoryPoster title={story.title} content={story.content} index={i} />
+                  {story.cover_image ? (
+                    <div className="card-cover">
+                      <img src={story.cover_image} alt={story.title} loading={i < 3 ? 'eager' : 'lazy'} />
+                    </div>
+                  ) : (
+                    <StoryPoster title={story.title} content={story.content} index={i} />
+                  )}
                   <div className="card-info">
                     <div className="card-title-row">
                       <h2 className="card-title">{story.title}</h2>

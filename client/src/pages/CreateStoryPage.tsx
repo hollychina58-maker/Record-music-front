@@ -21,6 +21,7 @@ export function CreateStoryPage() {
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ title?: string; content?: string }>({});
   const [withMusic, setWithMusic] = useState(false);
+  const [withCover, setWithCover] = useState(false);
   // musicMode encodes both musicType and lyricsMode in one choice:
   //   'instrumental'       → musicType=instrumental
   //   'song_ai'            → musicType=song, lyricsMode=ai_generated
@@ -111,8 +112,14 @@ export function CreateStoryPage() {
             setError(t('create.error.musicFailed'));
           }
         }
-      } else if (withMusic && !user) {
-        setError(t('create.error.loginRequired'));
+      }
+      // Fire-and-forget: trigger cover image generation if enabled
+      if (withCover) {
+        apiService.generateCover(story.id).catch(() => {});
+      }
+
+      if ((withMusic && user) || withCover) {
+        navigate(`/story/${story.id}`);
       } else {
         navigate('/');
       }
@@ -258,6 +265,18 @@ export function CreateStoryPage() {
                   </select>
                 </div>
               </div>
+            )}
+
+            {/* AI Cover Image Toggle */}
+            {user && (
+              <label className="music-toggle">
+                <input
+                  type="checkbox"
+                  checked={withCover}
+                  onChange={(e) => setWithCover(e.target.checked)}
+                />
+                <span>{t('create.coverToggle')}</span>
+              </label>
             )}
           </div>
         </form>

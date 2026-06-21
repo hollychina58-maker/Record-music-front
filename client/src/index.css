@@ -419,6 +419,27 @@
   animation: fadeIn 0.2s ease-out;
 }
 
+/* Generate Cover Button */
+.gen-cover-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: 1px solid var(--seal-red-light);
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--seal-red);
+  transition: all var(--transition-fast) var(--ease-out-expo);
+}
+
+.gen-cover-btn:hover {
+  background: var(--seal-red);
+  color: #fff;
+  transform: scale(1.05);
+}
+
 /* ============================================
    SHARE PANEL — MOBILE
    ============================================ */

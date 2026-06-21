@@ -37,6 +37,7 @@
   "create.publishBtn": "Опубликовать",
   "create.publishing": "Тушь сохнет...",
   "create.musicToggle": "Создать музыку (осталось {count})",
+  "create.coverToggle": "Создать обложку с ИИ",
   "create.noFreeMusic": "Бесплатные создания закончились",
   "create.buyNow": "Купить тариф",
   "create.generating": "Сочинение музыки...",

@@ -214,6 +214,26 @@ export function StoryDetailPage() {
             storyTags={story.tags}
             disabled={story.isBurned}
           />
+          {!story.isBurned && !story.cover_image && user?.id === story.user_id && (
+            <button
+              type="button"
+              className="gen-cover-btn"
+              onClick={async () => {
+                try {
+                  await apiService.generateCover(story.id);
+                  addToast('info', '🎨 封面图生成中，请稍后刷新页面查看', { duration: 4000 });
+                } catch { /* ignore */ }
+              }}
+              aria-label="生成封面"
+              title="生成 AI 封面图"
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <path d="M21 15l-5-5L5 21" />
+              </svg>
+            </button>
+          )}
           {!story.isBurned && user?.id === story.user_id && (
             <button
               type="button"
@@ -228,6 +248,31 @@ export function StoryDetailPage() {
           )}
         </div>
       </header>
+
+      {story.cover_image && (
+        <div className="cover-banner">
+          <img src={story.cover_image} alt={story.title} className="cover-banner-img" />
+          {user?.id === story.user_id && (
+            <div className="cover-banner-actions">
+              <button
+                type="button"
+                className="cover-delete-btn"
+                onClick={async () => {
+                  try {
+                    await apiService.deleteCover(story.id);
+                    setStory({ ...story, cover_image: null, cover_prompt: null });
+                  } catch { /* ignore */ }
+                }}
+                aria-label="删除封面"
+              >
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M6 6l12 12M18 6L6 18" />
+                </svg>
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       <main className="story-content">
         <div className="reading-progress-line" />
