@@ -362,12 +362,12 @@ export async function generateCoverImage(prompt: string): Promise<{ imageUrl: st
     model: 'image-01',
     prompt,
     n: 1,
-    size: '1024x1024',
+    aspect_ratio: '1:1',
     response_format: 'url',
   };
 
   const response = await axios.post<{
-    data?: { url?: string };
+    data?: { image_urls?: string[] };
     base_resp?: { status_code: number; status_msg: string };
   }>(`${baseUrl}/image_generation`, payload, {
     headers: {
@@ -381,7 +381,7 @@ export async function generateCoverImage(prompt: string): Promise<{ imageUrl: st
     throw new Error(response.data.base_resp.status_msg || 'MiniMax image API error');
   }
 
-  const imageUrl = response.data.data?.url;
+  const imageUrl = response.data.data?.image_urls?.[0];
   if (!imageUrl) throw new Error('No image URL in response');
 
   return { imageUrl };
