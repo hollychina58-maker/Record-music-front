@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import axios from 'axios';
-import { authMiddleware, AuthRequest } from '../middleware/auth.js';
+import { authMiddleware, optionalAuthMiddleware, AuthRequest } from '../middleware/auth.js';
 import { generateMusic, analyzeEmotion, MOOD_LABELS } from '../services/minimax.js';
 import type { MusicOptions } from '../services/minimax.js';
 import { extractLyrics } from '../services/storyAnalysis.js';
@@ -131,7 +131,7 @@ router.post('/generate', authMiddleware, async (req: AuthRequest, res: Response)
   }
 });
 
-router.get('/by-story/:storyId', authMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/by-story/:storyId', optionalAuthMiddleware, async (req: AuthRequest, res: Response) => {
   // Metadata-only — any authenticated user can see a story's music info.
   // Actual streaming/download is gated in /stream and /download endpoints.
   const records = await dbAll(

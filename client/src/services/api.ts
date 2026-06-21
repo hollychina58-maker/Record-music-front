@@ -61,8 +61,12 @@ class ApiService {
       (response) => response,
       (error) => {
         if (error?.response?.status === 401) {
-          useAuthStore.getState().logout();
-          window.location.href = '/login';
+          // Only redirect if the user was logged in (expired token).
+          // Guests browsing public content may hit 401 on auth-required endpoints — that's fine.
+          if (useAuthStore.getState().isAuthenticated) {
+            useAuthStore.getState().logout();
+            window.location.href = '/login';
+          }
         }
         return Promise.reject(error);
       }
