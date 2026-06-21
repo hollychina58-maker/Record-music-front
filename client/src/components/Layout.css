@@ -144,18 +144,10 @@
     letter-spacing: 0.06em;
   }
 
-  /* Horizontal scroll for nav links on small screens */
+  /* Nav links — allow items to shrink, keep dropdown visible */
   .nav-links {
     gap: 0;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    mask-image: linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%);
-    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%);
-  }
-
-  .nav-links::-webkit-scrollbar {
-    display: none;
+    overflow: visible; /* must be visible so dropdown menu isn't clipped */
   }
 
   .nav-link {

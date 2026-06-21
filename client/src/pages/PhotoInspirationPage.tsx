@@ -1,5 +1,6 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../stores/authStore';
 import { useLanguage } from '../i18n/LanguageContext';
 import { apiService } from '../services/api';
 import './PhotoInspirationPage.css';
@@ -13,8 +14,16 @@ interface AnalysisResult {
 
 export function PhotoInspirationPage() {
   const navigate = useNavigate();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const { t } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Photo inspiration requires login (uses MiniMax API)
+  useEffect(() => {
+    if (!isAuthenticated) navigate('/login', { replace: true });
+  }, [isAuthenticated, navigate]);
+
+  if (!isAuthenticated) return null;
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
