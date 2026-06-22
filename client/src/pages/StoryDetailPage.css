@@ -11,16 +11,16 @@
 
 /* ===== Page Atmosphere ===== */
 .detail-atmosphere {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   width: 100%;
-  height: 100vh;       /* fallback for browsers without svh */
-  height: 100svh;      /* small viewport — locked, prevents iOS resize cascade */
+  height: 100%;
   z-index: 0;
   pointer-events: none;
   background-size: cover;
   background-position: center;
+  background-attachment: scroll; /* scroll with page — no iOS resize recompute */
   filter: blur(12px) saturate(0.8);
   opacity: 0.55;
 }

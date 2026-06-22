@@ -30,7 +30,8 @@ export function MusicPlayer({ audioUrl, title, style: musicStyle, musicId, canDo
     audio.preload = 'auto';
     audioRef.current = audio;
 
-    const onLoaded = () => setDuration(audio.duration);
+    const onLoaded = () => setDuration(audio.duration || 0);
+    const onDurationChange = () => { if (audio.duration && !isNaN(audio.duration)) setDuration(audio.duration); };
     // Throttle timeupdate via rAF — avoid excessive re-renders on mobile
     let ticking = false;
     const onTime = () => {
@@ -51,6 +52,7 @@ export function MusicPlayer({ audioUrl, title, style: musicStyle, musicId, canDo
     audio.load();
 
     audio.addEventListener('loadedmetadata', onLoaded);
+    audio.addEventListener('durationchange', onDurationChange);
     audio.addEventListener('timeupdate', onTime);
     audio.addEventListener('ended', onEnd);
     audio.addEventListener('error', onError);
@@ -61,6 +63,7 @@ export function MusicPlayer({ audioUrl, title, style: musicStyle, musicId, canDo
       cancelAnimationFrame(rafRef.current);
       audio.pause();
       audio.removeEventListener('loadedmetadata', onLoaded);
+      audio.removeEventListener('durationchange', onDurationChange);
       audio.removeEventListener('timeupdate', onTime);
       audio.removeEventListener('ended', onEnd);
       audio.removeEventListener('error', onError);
