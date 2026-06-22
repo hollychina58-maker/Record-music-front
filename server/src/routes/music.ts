@@ -201,15 +201,32 @@ router.get('/:id/stream', async (req: Request, res: Response) => {
           // URL expired — regenerate using stored params (no credit deduction)
           const params = music.generation_params ? JSON.parse(music.generation_params) : null;
           if (params) {
-            try {
-              console.log('[Music] CDN URL expired, regenerating music id:', music.id);
-              const fresh = await generateMusic(params.effectiveText, params.musicOptions as MusicOptions);
-              await dbRun('UPDATE music SET file_path = ? WHERE id = ?', [fresh.audioUrl, music.id]);
-              streamUrl = fresh.audioUrl;
-            } catch (regenErr) {
-              console.error('[Music] Regeneration failed:', regenErr);
-              res.status(503).json({ error: 'Music URL expired and regeneration failed' });
-              return;
+            // Optimistic lock: claim regeneration with a sentinel so concurrent
+            // requests don't each generate different music.
+            const claimed = await dbRun(
+              "UPDATE music SET file_path = '__regenerating__' WHERE id = ? AND file_path = ?",
+              [music.id, music.file_path]
+            );
+            if (claimed.changes === 0) {
+              // Another request is already regenerating — wait and read its result
+              await new Promise(r => setTimeout(r, 2000));
+              const refreshed = await dbGet<any>('SELECT file_path FROM music WHERE id = ?', [music.id]);
+              if (refreshed?.file_path && refreshed.file_path !== '__regenerating__') {
+                streamUrl = refreshed.file_path;
+              }
+            } else {
+              try {
+                console.log('[Music] CDN URL expired, regenerating music id:', music.id);
+                const fresh = await generateMusic(params.effectiveText, params.musicOptions as MusicOptions);
+                await dbRun('UPDATE music SET file_path = ? WHERE id = ?', [fresh.audioUrl, music.id]);
+                streamUrl = fresh.audioUrl;
+              } catch (regenErr) {
+                console.error('[Music] Regeneration failed:', regenErr);
+                // Restore old URL so future requests can retry
+                await dbRun('UPDATE music SET file_path = ? WHERE id = ?', [music.file_path, music.id]);
+                res.status(503).json({ error: 'Music URL expired and regeneration failed' });
+                return;
+              }
             }
           } else {
             res.status(410).json({ error: 'Music URL expired and no params to regenerate' });
