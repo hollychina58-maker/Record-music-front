@@ -31,6 +31,16 @@
   color: #c33;
 }
 
+/* Guest like — redirects to login on click */
+.like-btn--guest {
+  opacity: 0.5;
+  cursor: pointer;
+}
+
+.like-btn--guest:hover {
+  opacity: 0.8;
+}
+
 .like-btn--disabled {
   cursor: default;
   color: #ccc;

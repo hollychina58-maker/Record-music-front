@@ -432,7 +432,8 @@
 /* ===== Music Section (embedded in content flow) ===== */
 .music-section {
   position: relative;
-  margin: var(--space-8) 0 0 0;
+  margin: var(--space-8) 0 0;
+  margin-right: auto;
   max-width: 480px;
   width: 100%;
   background: transparent;
