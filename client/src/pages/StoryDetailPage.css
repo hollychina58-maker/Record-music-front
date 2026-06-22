@@ -2,7 +2,7 @@
 /* Refined typography, generous whitespace, ink-wash atmosphere */
 
 .detail-page {
-  min-height: 100vh;
+  min-height: 100svh;
   display: flex;
   flex-direction: column;
   background: var(--color-page);
@@ -15,8 +15,8 @@
   top: 0;
   left: 0;
   width: 100%;
-  height: 100svh; /* small viewport — never changes, prevents iOS resize cascade */
-  height: 100vh;  /* fallback for browsers without svh */
+  height: 100vh;       /* fallback for browsers without svh */
+  height: 100svh;      /* small viewport — locked, prevents iOS resize cascade */
   z-index: 0;
   pointer-events: none;
   background-size: cover;
@@ -443,7 +443,7 @@
   position: fixed;
   top: 0;
   width: 1px;
-  height: 100vh;
+  height: 100svh;
   background: rgba(15, 15, 15, 0.06);
   z-index: var(--z-below, -1);
   pointer-events: none;
