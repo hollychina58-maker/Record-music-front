@@ -79,21 +79,6 @@ export function StoryDetailPage() {
       : {},
   );
 
-  // Ink-settle: observe paragraphs entering viewport
-  useEffect(() => {
-    if (!story) return;
-    const observer = new IntersectionObserver((entries) => {
-      for (const entry of entries) {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('ink-settled');
-        }
-      }
-    }, { threshold: 0.3 });
-    const paras = document.querySelectorAll('.story-body p');
-    paras.forEach((p, i) => { (p as HTMLElement).style.transitionDelay = `${i * 0.08}s`; observer.observe(p); });
-    return () => observer.disconnect();
-  }, [story]);
-
   // Header action menu toggle
   const [showActionMenu, setShowActionMenu] = useState(false);
 
@@ -387,7 +372,7 @@ export function StoryDetailPage() {
           </div>
           <div className="story-body">
             {story.content.split('\n').map((paragraph, idx) => (
-              <p key={idx}>{paragraph || ' '}</p>
+              <p key={idx} style={{ '--p-index': idx } as React.CSSProperties}>{paragraph || ' '}</p>
             ))}
           </div>
         </article>

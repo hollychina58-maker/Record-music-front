@@ -574,15 +574,15 @@
     padding: var(--space-6) var(--space-3) var(--space-10);
   }
 
-  /* Ink-settle: paragraphs start light, darken as they enter viewport */
+  /* Ink-settle: paragraphs animate from light wash to deep ink */
   .story-body p {
-    color: var(--ink-light);
-    opacity: 0.65;
-    transition: color 0.8s ease, opacity 0.8s ease;
+    animation: inkSettle 1s var(--ease-out-expo) both;
+    animation-delay: calc(var(--p-index, 0) * 0.12s);
   }
-  .story-body p.ink-settled {
-    color: var(--ink-black);
-    opacity: 1;
+
+  @keyframes inkSettle {
+    from { color: var(--ink-light); opacity: 0.55; }
+    to { color: var(--ink-black); opacity: 1; }
   }
 
   .story-body {
