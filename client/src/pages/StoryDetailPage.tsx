@@ -79,6 +79,21 @@ export function StoryDetailPage() {
       : {},
   );
 
+  // Cover image parallax — image drifts slower than page scroll
+  useEffect(() => {
+    if (!story?.cover_image) return;
+    const img = document.querySelector('.cover-hero-img') as HTMLImageElement | null;
+    if (!img) return;
+    const onScroll = () => {
+      const scrollY = window.scrollY;
+      if (scrollY < window.innerHeight) {
+        img.style.transform = `translateY(${scrollY * 0.15}px)`;
+      }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [story?.cover_image]);
+
   const removePendingFromStorage = (musicId: number) => {
     try {
       const raw = localStorage.getItem('mo_pending_music');
@@ -249,14 +264,21 @@ export function StoryDetailPage() {
         </div>
       </header>
 
-      {story.cover_image && (
-        <div className="cover-banner">
-          <img src={story.cover_image} alt={story.title} className="cover-banner-img" />
-          {user?.id === story.user_id && (
-            <div className="cover-banner-actions">
+      {story.cover_image ? (
+        <div className="cover-hero">
+          <img src={story.cover_image} alt="" className="cover-hero-img" aria-hidden="true" />
+          <div className="cover-hero-gradient" />
+          <div className="cover-hero-content">
+            <h1 className="cover-hero-title">{story.title}</h1>
+            <time className="cover-hero-date">
+              {new Date(story.created_at).toLocaleDateString('zh-CN', {
+                year: 'numeric', month: 'long', day: 'numeric',
+              })}
+            </time>
+            {user?.id === story.user_id && (
               <button
                 type="button"
-                className="cover-delete-btn"
+                className="cover-hero-delete"
                 onClick={async () => {
                   try {
                     await apiService.deleteCover(story.id);
@@ -265,16 +287,18 @@ export function StoryDetailPage() {
                 }}
                 aria-label="删除封面"
               >
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <path d="M6 6l12 12M18 6L6 18" />
                 </svg>
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
+      ) : (
+        <div className="cover-hero-placeholder" />
       )}
 
-      <main className="story-content">
+      <main className={`story-content${story.cover_image ? ' story-content--has-cover' : ''}`}>
         <div className="reading-progress-line" />
 
         <div className="ink-decoration">
@@ -282,14 +306,18 @@ export function StoryDetailPage() {
         </div>
 
         <article>
-          <h1 className="story-title">{story.title}</h1>
-          <time className="story-date">
-            {new Date(story.created_at).toLocaleDateString('zh-CN', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-            })}
-          </time>
+          {!story.cover_image && (
+            <>
+              <h1 className="story-title">{story.title}</h1>
+              <time className="story-date">
+                {new Date(story.created_at).toLocaleDateString('zh-CN', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </time>
+            </>
+          )}
           {story.tags && story.tags.length > 0 && (
             <div className="story-tags">
               {story.tags.map(tag => (
