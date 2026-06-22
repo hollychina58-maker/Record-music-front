@@ -30,14 +30,14 @@ export function StoryDetailPage() {
   /** Map story tone to a subtle gradient for the page atmosphere */
   const toneGradient = (tone: string | null): string => {
     const map: Record<string, string> = {
-      sorrow:    'linear-gradient(180deg, #e8e2dc 0%, #edeadf 50%, #f2efe8 100%)',
-      joy:       'linear-gradient(180deg, #f2e8d8 0%, #f0ece0 50%, #f5f0e8 100%)',
-      peace:     'linear-gradient(180deg, #e6efe4 0%, #edefe8 50%, #f5f0e8 100%)',
-      nostalgia: 'linear-gradient(180deg, #efe4d6 0%, #f0e8dc 50%, #f5f0e8 100%)',
-      warmth:    'linear-gradient(180deg, #f0e4d8 0%, #f0e8de 50%, #f5f0e8 100%)',
-      loneliness:'linear-gradient(180deg, #e4e6ec 0%, #eaece8 50%, #f5f0e8 100%)',
-      passion:   'linear-gradient(180deg, #eed8d6 0%, #efe4e0 50%, #f5f0e8 100%)',
-      mystery:   'linear-gradient(180deg, #e2e4e8 0%, #e8eae4 50%, #f5f0e8 100%)',
+      sorrow:    'linear-gradient(180deg, #d5cfc8 0%, #e2ded8 50%, #f5f0e8 100%)',
+      joy:       'linear-gradient(180deg, #ead9bc 0%, #ede2cd 50%, #f5f0e8 100%)',
+      peace:     'linear-gradient(180deg, #d2e0cc 0%, #e2e8dc 50%, #f5f0e8 100%)',
+      nostalgia: 'linear-gradient(180deg, #e8d8c0 0%, #ebe0cc 50%, #f5f0e8 100%)',
+      warmth:    'linear-gradient(180deg, #e8d4c0 0%, #eddfcf 50%, #f5f0e8 100%)',
+      loneliness:'linear-gradient(180deg, #d4d8e0 0%, #e2e4e8 50%, #f5f0e8 100%)',
+      passion:   'linear-gradient(180deg, #e4c8c4 0%, #ead8d4 50%, #f5f0e8 100%)',
+      mystery:   'linear-gradient(180deg, #d2d6dc 0%, #e0e2e4 50%, #f5f0e8 100%)',
     };
     return tone && map[tone] ? map[tone] : map.peace;
   };

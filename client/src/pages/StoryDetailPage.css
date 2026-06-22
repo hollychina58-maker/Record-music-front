@@ -17,8 +17,8 @@
   pointer-events: none;
   background-size: cover;
   background-position: center;
-  filter: blur(50px) saturate(0.6);
-  opacity: 0.18;
+  filter: blur(12px) saturate(0.8);
+  opacity: 0.55;
 }
 
 /* ===== Cover Hero — Immersive full-viewport banner ===== */
