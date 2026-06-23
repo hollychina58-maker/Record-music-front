@@ -2,7 +2,7 @@
 /* Frosted glass inputs, voice ripple, ink-spread submit */
 
 .create-page {
-  min-height: 100dvh;
+  min-height: 100svh;
   display: flex;
   flex-direction: column;
   background: var(--color-page);
@@ -566,7 +566,7 @@
 
   .story-form {
     flex-direction: row;
-    min-height: calc(100dvh - var(--nav-height) - 56px);
+    min-height: calc(100svh - var(--nav-height) - 56px);
   }
 
   .writing-panel {

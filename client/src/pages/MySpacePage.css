@@ -2,7 +2,7 @@
 /* Refined profile card, tabs, stats grid, and story lists */
 
 .myspace-page {
-  min-height: 100dvh;
+  min-height: 100svh;
   background: var(--color-page);
   padding-bottom: var(--space-16);
 }

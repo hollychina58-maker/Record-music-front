@@ -2,7 +2,7 @@
 /* Ink-wash atmosphere, frosted glass panels, refined data display */
 
 .profile-page {
-  min-height: 100dvh;
+  min-height: 100svh;
   position: relative;
   background: var(--color-page);
 }

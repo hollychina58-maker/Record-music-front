@@ -2,7 +2,7 @@
 /* Ink-wash aesthetic, centered layout */
 
 .inspiration-page {
-  min-height: 100dvh;
+  min-height: 100svh;
   background: var(--color-page);
   display: flex;
   flex-direction: column;

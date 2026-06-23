@@ -2,7 +2,7 @@
 /* Literary journal aesthetic with ink-wash atmosphere */
 
 .home-page {
-  min-height: 100dvh;
+  min-height: 100svh;
   background: var(--color-page);
   position: relative;
   overflow-x: hidden;
