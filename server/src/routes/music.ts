@@ -108,9 +108,10 @@ router.post('/generate', authMiddleware, async (req: AuthRequest, res: Response)
     // Persist generation params so URL can be refreshed later if the CDN link expires
     const generationParams = JSON.stringify({ effectiveText, musicOptions, lyricsMode: lyricsMode || 'ai_generated' });
 
-    // Dedup: check BEFORE deducting credit — avoid race where we deduct then find existing
-    const existing = await dbGet<{ id: number; status: string }>(
-      "SELECT id, status FROM music WHERE story_id = ? AND status IN ('pending', 'completed') ORDER BY created_at DESC LIMIT 1",
+    // Dedup: only consider records that have a valid URL.
+    // completed + NULL file_path means the URL expired and couldn't regenerate — treat as "need new".
+    const existing = await dbGet<{ id: number; status: string; file_path: string | null }>(
+      "SELECT id, status, file_path FROM music WHERE story_id = ? AND status IN ('pending', 'completed') AND file_path IS NOT NULL ORDER BY created_at DESC LIMIT 1",
       [storyId]
     );
 
@@ -145,7 +146,7 @@ router.post('/generate', authMiddleware, async (req: AuthRequest, res: Response)
 
       // Final re-check after deducting credit — another request may have created the record
       const recheck = await dbGet<{ id: number; status: string }>(
-        "SELECT id, status FROM music WHERE story_id = ? AND status IN ('pending', 'completed') ORDER BY created_at DESC LIMIT 1",
+        "SELECT id, status FROM music WHERE story_id = ? AND status IN ('pending', 'completed') AND file_path IS NOT NULL ORDER BY created_at DESC LIMIT 1",
         [storyId]
       );
       if (recheck) {
