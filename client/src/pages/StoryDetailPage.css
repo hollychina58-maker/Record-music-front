@@ -404,21 +404,9 @@
   color: var(--ink-black);
   margin: 0 0 var(--space-6);
   letter-spacing: 0.015em;
-  animation: fadeInUp 0.55s var(--ease-out-expo) forwards;
-  opacity: 0;
   max-width: 65ch;
-  /* Subtle text-shadow helps readability against blurred background */
   text-shadow: 0 0 1px rgba(245,240,232,0.4);
 }
-
-.story-body p:nth-child(1) { animation-delay: 0.2s; }
-.story-body p:nth-child(2) { animation-delay: 0.25s; }
-.story-body p:nth-child(3) { animation-delay: 0.3s; }
-.story-body p:nth-child(4) { animation-delay: 0.35s; }
-.story-body p:nth-child(5) { animation-delay: 0.4s; }
-.story-body p:nth-child(6) { animation-delay: 0.45s; }
-.story-body p:nth-child(7) { animation-delay: 0.5s; }
-.story-body p:nth-child(8) { animation-delay: 0.55s; }
 
 .story-body p:last-child {
   margin-bottom: 0;
@@ -520,17 +508,6 @@
 
   .story-content {
     padding: var(--space-6) var(--space-3) var(--space-10);
-  }
-
-  /* Ink-settle: paragraphs animate from light wash to deep ink */
-  .story-body p {
-    animation: inkSettle 1s var(--ease-out-expo) both;
-    animation-delay: calc(var(--p-index, 0) * 0.12s);
-  }
-
-  @keyframes inkSettle {
-    from { color: var(--ink-light); opacity: 0.55; }
-    to { color: var(--ink-black); opacity: 1; }
   }
 
   .story-body {
