@@ -24,44 +24,60 @@ interface SubscriptionInfo {
 
 const PLAN_META: Record<string, {
   icon: string;
-  tagline: string;
   color: string;
-  features: string[];
-  period: string;
+  taglineKey: string;
+  periodKey: string;
+  featureKeys: string[];
   recommended?: boolean;
 }> = {
   per_use: {
     icon: '✦',
-    tagline: '按需取用',
     color: '#4f4f4f',
-    period: '/ 次',
-    features: ['每次生成一首专属配乐', 'AI 情感风格匹配', '即时到账，无需订阅', '永久有效，随时使用'],
+    taglineKey: 'pp.plan.tagline.per_use',
+    periodKey: 'pp.plan.period.per_use',
+    featureKeys: [
+      'pp.plan.feature.per_use.1',
+      'pp.plan.feature.per_use.2',
+      'pp.plan.feature.per_use.3',
+      'pp.plan.feature.per_use.4',
+    ],
   },
   monthly: {
     icon: '◈',
-    tagline: '月度无忧',
     color: '#3a4f8b',
-    period: '/ 月',
-    features: ['每月 60 次音乐生成', '全风格解锁', '30 天持续有效', '可随时升级年度会员'],
+    taglineKey: 'pp.plan.tagline.monthly',
+    periodKey: 'pp.plan.period.monthly',
+    featureKeys: [
+      'pp.plan.feature.monthly.1',
+      'pp.plan.feature.monthly.2',
+      'pp.plan.feature.monthly.3',
+      'pp.plan.feature.monthly.4',
+    ],
   },
   yearly: {
     icon: '❋',
-    tagline: '年度臻享',
     color: '#8b4513',
-    period: '/ 年',
+    taglineKey: 'pp.plan.tagline.yearly',
+    periodKey: 'pp.plan.period.yearly',
+    featureKeys: [
+      'pp.plan.feature.yearly.1',
+      'pp.plan.feature.yearly.2',
+      'pp.plan.feature.yearly.3',
+      'pp.plan.feature.yearly.4',
+    ],
     recommended: true,
-    features: ['无限次音乐生成', '365 天持续有效', '全风格 · 全情绪解锁', '专属年度会员标识'],
   },
 };
 
 function DaysLeft({ expiresAt }: { expiresAt: string }) {
+  const { t } = useLanguage();
   const days = Math.max(0, Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 86400000));
-  return <>{days} 天</>;
+  return <>{days} {t('pp.sub.daysLeft')}</>;
 }
 
 export function PaymentPage() {
   const navigate = useNavigate();
-  useLanguage();
+  const { t } = useLanguage();
   const currency = useGeoCurrency();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [products, setProducts] = useState<Product[]>([]);
@@ -84,7 +100,6 @@ export function PaymentPage() {
       const prods: Product[] = productsData.data;
       setProducts(prods);
       setSubscription(subData.data);
-      // default-select the recommended (yearly) plan if not subscribed
       if (!subData.data) {
         const yearly = prods.find((p) => p.type === 'yearly');
         if (yearly) setSelectedId(yearly.id);
@@ -97,8 +112,8 @@ export function PaymentPage() {
     return (
       <div className="pp-page">
         <div className="pp-loading">
-          <span className="pp-loading-char">卷</span>
-          <span className="pp-loading-text">载入中</span>
+          <span className="pp-loading-char">{t('pp.loading.char')}</span>
+          <span className="pp-loading-text">{t('pp.loading.text')}</span>
         </div>
       </div>
     );
@@ -129,19 +144,19 @@ export function PaymentPage() {
     <div className="pp-page">
       {/* ── Header ── */}
       <header className="pp-header">
-        <button type="button" className="pp-back" onClick={() => navigate(-1)} aria-label="返回">
+        <button type="button" className="pp-back" onClick={() => navigate(-1)} aria-label={t('common.back')}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="20" height="20">
             <path d="M19 12H5M12 19l-7-7 7-7" />
           </svg>
         </button>
-        <span className="pp-header-label">会员套餐</span>
+        <span className="pp-header-label">{t('pp.header.label')}</span>
       </header>
 
       {/* ── Hero ── */}
       <section className="pp-hero">
-        <div className="pp-hero-seal">音</div>
-        <h1 className="pp-hero-title">为你的故事<br />配上专属的旋律</h1>
-        <p className="pp-hero-sub">AI 驱动的情感音乐生成 · 每一刻都值得被铭记</p>
+        <div className="pp-hero-seal">{t('pp.hero.seal')}</div>
+        <h1 className="pp-hero-title">{t('pp.hero.title1')}<br />{t('pp.hero.title2')}</h1>
+        <p className="pp-hero-sub">{t('pp.hero.sub')}</p>
         <div className="pp-hero-divider"><span /></div>
       </section>
 
@@ -155,14 +170,14 @@ export function PaymentPage() {
                 <div className="pp-sub-name">{subscription.planName}</div>
                 <div className="pp-sub-meta">
                   {subscription.musicRemaining !== null
-                    ? `剩余 ${subscription.musicRemaining} 次`
-                    : '无限生成'}
-                  &ensp;·&ensp;还剩&ensp;<DaysLeft expiresAt={subscription.expiresAt} />
+                    ? t('pp.sub.remaining', { count: subscription.musicRemaining })
+                    : t('pp.sub.unlimited')}
+                  &ensp;·&ensp;<DaysLeft expiresAt={subscription.expiresAt} />
                 </div>
               </div>
             </div>
             <button className="pp-sub-upgrade" onClick={() => setShowAllPlans(true)}>
-              查看套餐 →
+              {t('pp.sub.viewAll')}
             </button>
           </div>
         )}
@@ -171,7 +186,7 @@ export function PaymentPage() {
         {showPlans && (
           <>
             {subscription && (
-              <p className="pp-renew-hint">续费或升级你的套餐</p>
+              <p className="pp-renew-hint">{t('pp.renew.hint')}</p>
             )}
 
             <div className="pp-plans">
@@ -203,16 +218,16 @@ export function PaymentPage() {
                     <div className="pp-plan-strip" />
 
                     {/* Badges */}
-                    {isRecommended && <div className="pp-plan-badge pp-plan-badge--rec">推荐</div>}
-                    {upgrade && <div className="pp-plan-badge pp-plan-badge--up">升级优惠</div>}
-                    {isCurrent && <div className="pp-plan-badge pp-plan-badge--cur">当前套餐</div>}
+                    {isRecommended && <div className="pp-plan-badge pp-plan-badge--rec">{t('pp.badge.recommended')}</div>}
+                    {upgrade && <div className="pp-plan-badge pp-plan-badge--up">{t('pp.badge.upgrade')}</div>}
+                    {isCurrent && <div className="pp-plan-badge pp-plan-badge--cur">{t('pp.badge.current')}</div>}
 
                     {/* Icon + name */}
                     <div className="pp-plan-head">
                       <span className="pp-plan-icon">{meta.icon}</span>
                       <div>
                         <div className="pp-plan-name">{product.name}</div>
-                        <div className="pp-plan-tagline">{meta.tagline}</div>
+                        <div className="pp-plan-tagline">{t(meta.taglineKey)}</div>
                       </div>
                     </div>
 
@@ -225,12 +240,14 @@ export function PaymentPage() {
                       )}
                       <span className="pp-plan-currency">{currency.symbol}</span>
                       <span className="pp-plan-amount">{currency.formatAmount(currency.toDisplayCents(price))}</span>
-                      <span className="pp-plan-period">{meta.period}</span>
+                      <span className="pp-plan-period">{t(meta.periodKey)}</span>
                     </div>
 
                     {/* Limit pill */}
                     <div className="pp-plan-limit">
-                      {product.musicLimit === null ? '♾ 无限次生成' : `🎵 ${product.musicLimit} 次 / 周期`}
+                      {product.musicLimit === null
+                        ? t('pp.limit.unlimited')
+                        : `🎵 ${product.musicLimit} ${t('pp.limit.period')}`}
                     </div>
 
                     {/* Divider */}
@@ -238,10 +255,10 @@ export function PaymentPage() {
 
                     {/* Features */}
                     <ul className="pp-plan-features">
-                      {meta.features.map((f, i) => (
+                      {meta.featureKeys.map((fk, i) => (
                         <li key={i} className="pp-plan-feature">
                           <span className="pp-feature-dot" />
-                          {f}
+                          {t(fk)}
                         </li>
                       ))}
                     </ul>
@@ -267,10 +284,10 @@ export function PaymentPage() {
                 onClick={() => selectedProduct && navigate(`/checkout?product=${selectedProduct.id}`)}
               >
                 {selectedProduct
-                  ? `选择「${selectedProduct.name}」· 去支付`
-                  : '请选择一个套餐'}
+                  ? t('pp.cta.select', { name: selectedProduct.name })
+                  : t('pp.cta.selectPrompt')}
               </button>
-              <p className="pp-cta-note">支持支付宝 · 微信支付 · PayPal，随时可取消</p>
+              <p className="pp-cta-note">{t('pp.cta.note')}</p>
             </div>
           </>
         )}
@@ -279,17 +296,17 @@ export function PaymentPage() {
         <div className="pp-trust">
           <div className="pp-trust-item">
             <span className="pp-trust-icon">🔒</span>
-            <span>安全加密</span>
+            <span>{t('pp.trust.security')}</span>
           </div>
           <div className="pp-trust-dot" />
           <div className="pp-trust-item">
             <span className="pp-trust-icon">⚡</span>
-            <span>即时生效</span>
+            <span>{t('pp.trust.instant')}</span>
           </div>
           <div className="pp-trust-dot" />
           <div className="pp-trust-item">
             <span className="pp-trust-icon">💬</span>
-            <span>随时客服</span>
+            <span>{t('pp.trust.support')}</span>
           </div>
         </div>
       </main>
