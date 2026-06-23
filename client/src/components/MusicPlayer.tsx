@@ -91,7 +91,9 @@ export function MusicPlayer({ audioUrl, title, style: musicStyle, musicId, canDo
       // iOS Safari: reload audio before playing dynamically-created sources
       if (audio.readyState === 0) audio.load();
       audio.play().then(() => setIsPlaying(true)).catch(() => {
-        setPlayError('network');
+        // Don't override — let onError event distinguish expired vs network
+        // iOS Safari autoplay block rejects without setting audio.error,
+        // so onError won't fire and user just sees no playback (no misleading error)
       });
     }
   };
