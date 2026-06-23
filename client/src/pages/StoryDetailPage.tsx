@@ -389,7 +389,14 @@ export function StoryDetailPage() {
                     addToast('info', '🎵 配乐生成中，请稍后...', { duration: 4000 });
                     setMusic({ id: result.musicId, status: 'pending', file_path: null, style: null });
                     pollUntilReady(result.musicId);
-                  } catch { /* */ }
+                  } catch (err: any) {
+                    const status = err?.response?.status;
+                    if (status === 402) {
+                      addToast('error', t('detail.noCredits'), { duration: 5000 });
+                    } else {
+                      addToast('error', t('detail.failedMusic'), { duration: 4000 });
+                    }
+                  }
                 }}
               >
                 🎵 {t('detail.regenerateMusic')}
