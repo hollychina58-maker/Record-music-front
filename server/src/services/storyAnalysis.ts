@@ -41,10 +41,10 @@ export async function analyzeStory(content: string): Promise<{ tone: string; tag
     const reply = await callMinimaxChat([
       {
         role: 'system',
-        content: `你是一个文学分析助手。分析用户提供的故事，返回严格的JSON格式，不要包含任何其他内容。
-tone必须是以下8个值之一: sorrow/joy/passion/peace/mystery/nostalgia/warmth/loneliness
-tags为2到4个简短中文标签（每个不超过4字），反映故事的主题、意象或情境。
-只输出JSON，格式: {"tone":"sorrow","tags":["离别","月色","思念"]}`,
+        content: `You are a literary analysis assistant. Analyze the story and return a strict JSON format, nothing else.
+tone must be one of: sorrow/joy/passion/peace/mystery/nostalgia/warmth/loneliness
+tags: 2 to 4 SHORT English tag keywords (max 4 chars each), reflecting themes, imagery, or mood.
+Output ONLY JSON in this exact format: {"tone":"sorrow","tags":["farewell","moonlight","longing"]}`,
       },
       { role: 'user', content: truncated },
     ]);

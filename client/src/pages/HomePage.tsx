@@ -170,7 +170,7 @@ export function HomePage() {
                     {story.tags && story.tags.length > 0 && (
                       <div className="card-tags">
                         {story.tags.slice(0, 3).map(tag => (
-                          <span key={tag} className="ink-card__tag">{tag}</span>
+                          <span key={tag} className="ink-card__tag">{t('tag.' + tag) || tag}</span>
                         ))}
                       </div>
                     )}

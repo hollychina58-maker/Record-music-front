@@ -339,7 +339,7 @@ export function StoryDetailPage() {
           {story.tags && story.tags.length > 0 && (
             <div className="story-tags">
               {story.tags.map(tag => (
-                <span key={tag} className="story-tag">{tag}</span>
+                <span key={tag} className="story-tag">{t('tag.' + tag) || tag}</span>
               ))}
             </div>
           )}
