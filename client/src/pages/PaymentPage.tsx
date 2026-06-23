@@ -25,6 +25,7 @@ interface SubscriptionInfo {
 const PLAN_META: Record<string, {
   icon: string;
   color: string;
+  nameKey: string;
   taglineKey: string;
   periodKey: string;
   featureKeys: string[];
@@ -33,6 +34,7 @@ const PLAN_META: Record<string, {
   per_use: {
     icon: '✦',
     color: '#4f4f4f',
+    nameKey: 'pp.plan.name.per_use',
     taglineKey: 'pp.plan.tagline.per_use',
     periodKey: 'pp.plan.period.per_use',
     featureKeys: [
@@ -45,6 +47,7 @@ const PLAN_META: Record<string, {
   monthly: {
     icon: '◈',
     color: '#3a4f8b',
+    nameKey: 'pp.plan.name.monthly',
     taglineKey: 'pp.plan.tagline.monthly',
     periodKey: 'pp.plan.period.monthly',
     featureKeys: [
@@ -57,6 +60,7 @@ const PLAN_META: Record<string, {
   yearly: {
     icon: '❋',
     color: '#8b4513',
+    nameKey: 'pp.plan.name.yearly',
     taglineKey: 'pp.plan.tagline.yearly',
     periodKey: 'pp.plan.period.yearly',
     featureKeys: [
@@ -226,7 +230,7 @@ export function PaymentPage() {
                     <div className="pp-plan-head">
                       <span className="pp-plan-icon">{meta.icon}</span>
                       <div>
-                        <div className="pp-plan-name">{product.name}</div>
+                        <div className="pp-plan-name">{t(meta.nameKey)}</div>
                         <div className="pp-plan-tagline">{t(meta.taglineKey)}</div>
                       </div>
                     </div>
