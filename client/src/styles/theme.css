@@ -361,7 +361,7 @@ body {
   color: var(--ink-black);
   background: var(--color-page);
   line-height: 1.7;
-  min-height: 100vh;
+  min-height: 100svh;
   overflow-x: hidden;
 }
 

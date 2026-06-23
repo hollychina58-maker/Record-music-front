@@ -2,7 +2,7 @@
 
 /* ── Page shell ── */
 .pp-page {
-  min-height: 100vh;
+  min-height: 100svh;
   background: var(--color-page);
   display: flex;
   flex-direction: column;
