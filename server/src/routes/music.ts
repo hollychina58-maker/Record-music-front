@@ -267,88 +267,29 @@ router.get('/:id/stream', async (req: Request, res: Response) => {
     const burned = await dbGet('SELECT id FROM burned_stories WHERE story_id = ?', [music.story_id]);
     if (burned) { res.status(403).json({ error: 'This story has been burned' }); return; }
 
-    if (music.file_path.startsWith('http') || music.file_path.startsWith('__regenerating__')) {
-      let streamUrl = music.file_path;
-
-      // Handle stuck sentinel — auto-release after 60s
-      if (music.file_path.startsWith('__regenerating__')) {
-        const ts = parseInt(music.file_path.split(':')[1] || '0', 10);
-        if (Date.now() - ts > 60000) {
-          // Sentinel stuck — clear it and mark expired so it won't be picked up again
-          await dbRun('UPDATE music SET file_path = NULL, status = ? WHERE id = ? AND file_path = ?', ['expired', music.id, music.file_path]);
-          res.status(503).json({ error: 'Music is being regenerated, please retry in a moment' });
-          return;
-        }
-        // Another request is regenerating — wait briefly
-        await new Promise(r => setTimeout(r, 2000));
-        const refreshed = await dbGet<any>('SELECT file_path FROM music WHERE id = ?', [music.id]);
-        if (refreshed?.file_path && !refreshed.file_path.startsWith('__regenerating__') && refreshed.file_path.startsWith('http')) {
-          streamUrl = refreshed.file_path;
-        } else {
-          res.status(503).json({ error: 'Music is being regenerated, please retry in a moment' });
-          return;
-        }
-      }
-
-      // Probe URL — MiniMax CDN links expire after ~24-48h; refresh silently if stale
-      if (streamUrl.startsWith('http')) {
-        try {
-          await axios.head(streamUrl, { timeout: 8000 });
-        } catch (probeErr: any) {
-          const status = probeErr?.response?.status;
-          if (status === 403 || status === 404 || status === 410) {
-            const params = music.generation_params ? JSON.parse(music.generation_params) : null;
-            if (params) {
-              // Optimistic lock with timestamped sentinel — auto-releases after 60s
-              const sentinel = `__regenerating__:${Date.now()}`;
-              const claimed = await dbRun(
-                "UPDATE music SET file_path = ? WHERE id = ? AND file_path = ?",
-                [sentinel, music.id, streamUrl]
-              );
-              if (claimed.changes === 0) {
-                // Another request is already regenerating — wait and read its result
-                await new Promise(r => setTimeout(r, 2000));
-                const refreshed = await dbGet<any>('SELECT file_path FROM music WHERE id = ?', [music.id]);
-                if (refreshed?.file_path && refreshed.file_path.startsWith('http')) {
-                  streamUrl = refreshed.file_path;
-                } else {
-                  res.status(503).json({ error: 'Music is being regenerated, please retry' });
-                  return;
-                }
-              } else {
-                // No generation_params — this music was created before the field existed.
-                // Cannot regenerate. Mark URL as permanently gone so subsequent requests
-                // don't keep re-probing and re-triggering the sentinel.
-                console.warn('[Music] CDN expired, no generation_params for music id:', music.id);
-                await dbRun('UPDATE music SET file_path = NULL, status = ? WHERE id = ?', ['expired', music.id]);
-                res.status(410).json({ error: 'Music URL expired and cannot be regenerated' });
-                return;
-              }
-            } else {
-              res.status(410).json({ error: 'Music URL expired and no params to regenerate' });
-              return;
-            }
-          }
-        }
-      }
-
-      // Stream with Range support — iOS Safari requires partial content responses
+    if (music.file_path.startsWith('http')) {
+      // Stream directly — no HEAD probe (MiniMax signed URLs often reject HEAD)
+      // No in-stream regeneration — if URL is dead, mark expired so UI shows regenerate button
       const range = req.headers.range;
       try {
-        const upstream = await axios.get<NodeJS.ReadableStream>(streamUrl, {
+        const upstream = await axios.get<NodeJS.ReadableStream>(music.file_path, {
           responseType: 'stream',
           timeout: 30000,
           headers: range ? { Range: range } : {},
         });
-        const upstreamStatus = upstream.status;
         res.setHeader('Content-Type', String(upstream.headers['content-type'] || 'audio/mpeg'));
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Accept-Ranges', 'bytes');
         if (upstream.headers['content-length']) res.setHeader('Content-Length', String(upstream.headers['content-length']));
         if (upstream.headers['content-range']) res.setHeader('Content-Range', String(upstream.headers['content-range']));
-        res.status(upstreamStatus);
+        res.status(upstream.status);
         (upstream.data as NodeJS.ReadableStream).pipe(res);
-      } catch {
+      } catch (streamErr: any) {
+        const status = streamErr?.response?.status;
+        if (status === 403 || status === 404 || status === 410) {
+          console.warn('[Music] CDN URL dead (status %d) for music id: %d', status, music.id);
+          await dbRun('UPDATE music SET file_path = NULL, status = ? WHERE id = ?', ['expired', music.id]);
+        }
         res.status(502).json({ error: 'Failed to stream audio' });
       }
       return;
