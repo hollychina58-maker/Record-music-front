@@ -238,17 +238,13 @@ class ApiService {
   }
 
   async downloadMusic(musicId: number, fileName?: string): Promise<void> {
-    const token = useAuthStore.getState().token;
-    const response = await fetch(`${API_BASE_URL}/music/${musicId}/stream?download=1`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
-
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(err.error || 'Download failed');
-    }
-
-    const blob = await response.blob();
+    // Use /download endpoint (auth required, returns file or redirect)
+    // Token goes in Authorization header via axios interceptor — not in URL
+    const response = await this.client.get(
+      `/music/${musicId}/download`,
+      { responseType: 'blob' }
+    );
+    const blob = new Blob([response.data]);
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;

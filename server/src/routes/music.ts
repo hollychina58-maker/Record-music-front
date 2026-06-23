@@ -103,28 +103,76 @@ router.post('/generate', authMiddleware, async (req: AuthRequest, res: Response)
     // Persist generation params so URL can be refreshed later if the CDN link expires
     const generationParams = JSON.stringify({ effectiveText, musicOptions, lyricsMode: lyricsMode || 'ai_generated' });
 
-    // Dedup: if story already has a pending or completed music, return it instead of creating a new one
+    // Dedup: check BEFORE deducting credit — avoid race where we deduct then find existing
     const existing = await dbGet<{ id: number; status: string }>(
       "SELECT id, status FROM music WHERE story_id = ? AND status IN ('pending', 'completed') ORDER BY created_at DESC LIMIT 1",
       [storyId]
     );
-    let musicId: number;
+
+    // Only deduct credit when actually creating a new music record
     if (existing) {
-      musicId = existing.id;
-      // Refund the credit we just deducted — reusing existing music
-      if (isSubscription && subscriptionId) {
-        await dbRun('UPDATE subscriptions SET music_remaining = music_remaining + 1 WHERE id = ?', [subscriptionId]);
-      } else if (!isSubscription) {
-        await dbRun('UPDATE users SET free_music_count = free_music_count + 1 WHERE id = ?', [userId]);
-      }
-      console.log('[Music] Reusing existing music record', musicId, 'status:', existing.status, '— credit refunded');
+      console.log('[Music] Reusing existing music record', existing.id, 'status:', existing.status, '— no credit deducted');
     } else {
-      const musicRecord = await dbRun(
-        "INSERT INTO music (story_id, status, style, music_type, generation_params) VALUES (?, 'pending', ?, ?, ?)",
-        [storyId, styleLabel, musicType || 'instrumental', generationParams]
+      // Atomic credit deduction + insert in a batch to avoid race
+      if (subscription) {
+        subscriptionId = subscription.id;
+        if (subscription.music_remaining !== null) {
+          const lock = await dbRun(
+            'UPDATE subscriptions SET music_remaining = music_remaining - 1 WHERE id = ? AND music_remaining > 0',
+            [subscription.id]
+          );
+          if (lock.changes === 0) {
+            res.status(402).json({ error: 'No music generation remaining. Please purchase a plan.' });
+            return;
+          }
+        }
+        isSubscription = true;
+      } else {
+        const lock = await dbRun(
+          'UPDATE users SET free_music_count = free_music_count - 1 WHERE id = ? AND free_music_count > 0',
+          [userId]
+        );
+        if (lock.changes === 0) {
+          res.status(402).json({ error: 'No music generation remaining. Please purchase a plan.' });
+          return;
+        }
+      }
+
+      // Final re-check after deducting credit — another request may have created the record
+      const recheck = await dbGet<{ id: number; status: string }>(
+        "SELECT id, status FROM music WHERE story_id = ? AND status IN ('pending', 'completed') ORDER BY created_at DESC LIMIT 1",
+        [storyId]
       );
-      musicId = musicRecord.lastInsertRowid;
+      if (recheck) {
+        // Race hit: refund the credit we just deducted and return existing record
+        if (isSubscription && subscriptionId) {
+          await dbRun('UPDATE subscriptions SET music_remaining = music_remaining + 1 WHERE id = ?', [subscriptionId]);
+        } else {
+          await dbRun('UPDATE users SET free_music_count = free_music_count + 1 WHERE id = ?', [userId]);
+        }
+        res.status(202).json({
+          data: {
+            musicId: recheck.id,
+            status: 'pending',
+            subscriptionRemaining: subscription
+              ? (await dbGet<{ music_remaining: number | null }>('SELECT music_remaining FROM subscriptions WHERE id = ?', [subscriptionId!]))?.music_remaining
+              : null,
+            freeMusicCount: !subscription
+              ? (await dbGet<{ free_music_count: number }>('SELECT free_music_count FROM users WHERE id = ?', [userId]))?.free_music_count
+              : null,
+          },
+        });
+        return;
+      }
     }
+
+    const musicRecord = existing
+      ? { lastInsertRowid: existing.id }
+      : await dbRun(
+          "INSERT INTO music (story_id, status, style, music_type, generation_params) VALUES (?, 'pending', ?, ?, ?)",
+          [storyId, styleLabel, musicType || 'instrumental', generationParams]
+        );
+    const musicId = musicRecord.lastInsertRowid as number;
 
     const subscriptionRemaining = subscription
       ? (await dbGet<{ music_remaining: number | null }>('SELECT music_remaining FROM subscriptions WHERE id = ?', [subscriptionId ?? subscription.id]))?.music_remaining

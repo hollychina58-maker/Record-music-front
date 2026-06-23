@@ -59,10 +59,13 @@ function PendingMusicPoller() {
           if (status.status === 'completed') {
             useAuthStore.getState().fetchCurrentUser();
             showMusicBanner(item.storyId);
+            // completed — do NOT add back to pending list
           } else if (status.status === 'failed') {
             addToast('error', '配乐生成失败，请重试');
+            // failed — do NOT add back (don't retry automatically)
           } else if (Date.now() - item.createdAt > 300000) {
             addToast('error', '配乐生成超时，请重试');
+            // timed out — remove from list
           } else {
             remaining.push(item);
           }

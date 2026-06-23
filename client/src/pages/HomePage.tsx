@@ -24,9 +24,9 @@ function StoryCardSkeleton({ index }: { index: number }) {
   );
 }
 
-function MusicBadge({ status, type }: { status: string | null; type: string | null }) {
+function MusicBadge({ status, type, isBurned }: { status: string | null; type: string | null; isBurned?: boolean }) {
   const { t } = useLanguage();
-  if (!status || status === 'failed') return null;
+  if (!status || status === 'failed' || isBurned) return null;
   if (status === 'pending') {
     return <span className="music-badge music-badge--pending">♪ {t('home.music.pending')}</span>;
   }
@@ -162,7 +162,7 @@ export function HomePage() {
                   <div className="card-info">
                     <div className="card-title-row">
                       <h2 className="card-title">{story.title}</h2>
-                      <MusicBadge status={story.music_status ?? null} type={story.music_type ?? null} />
+                      <MusicBadge status={story.music_status ?? null} type={story.music_type ?? null} isBurned={story.isBurned} />
                     </div>
                     {story.author_nickname && (
                       <span className="card-author">— {story.author_nickname}</span>

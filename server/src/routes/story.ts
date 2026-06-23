@@ -14,7 +14,6 @@ function parseTags(raw: string | null): string[] | null {
 }
 
 router.get('/', optionalAuthMiddleware, async (req: AuthRequest, res: Response) => {
-  const language = req.query.language as string | undefined;
   const countryCode = req.query.countryCode as string | undefined;
   const onlyMine = req.query.onlyMine === 'true';
   const page = Math.max(1, parseInt(String(req.query.page || '1'), 10));
@@ -53,11 +52,18 @@ router.get('/', optionalAuthMiddleware, async (req: AuthRequest, res: Response) 
 
   const stories = await dbAll<any>(storyQuery, [...params, limit, offset]);
 
+  // Total count for pagination UI
+  const countResult = await dbGet<{ cnt: number }>(
+    `SELECT COUNT(*) as cnt FROM stories s LEFT JOIN burned_stories bs ON s.id = bs.story_id WHERE ${where}`,
+    params
+  );
+  const total = countResult?.cnt ?? 0;
+
   const parsed = stories.map((s: any) => ({
     ...s,
     tags: parseTags(s.tags),
   }));
-  res.json({ data: parsed, meta: { page, limit } });
+  res.json({ data: parsed, meta: { page, limit, total } });
 });
 
 router.get('/:id', async (req: Request, res: Response) => {
