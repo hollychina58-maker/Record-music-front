@@ -383,7 +383,7 @@ export function StoryDetailPage() {
             ))}
           </div>
         </article>
-        {music && music.status !== 'pending' && music.status !== 'expired' && (
+        {music && music.status === 'completed' && (
           <div className="music-section">
             <MusicPlayer
               audioUrl={`${import.meta.env.VITE_API_URL || ''}/api/music/${music.id}/stream`}
