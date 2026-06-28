@@ -404,8 +404,7 @@ export function StoryDetailPage() {
             <p className="music-empty-hint">{music.status === 'failed' ? t('detail.failedMusic') : t('detail.expiredMusic')}</p>
             {user && story && user.id === story.user_id && (
               <button
-                className="gen-cover-btn"
-                style={{ marginTop: 'var(--space-3)', display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 20px', border: '1px solid var(--seal-red-light)', borderRadius: '20px', background: 'transparent', color: 'var(--seal-red)', cursor: 'pointer', fontSize: 'var(--text-sm)', fontFamily: 'var(--font-ink)' }}
+                className="regenerate-music-btn"
                 onClick={async () => {
                   try {
                     const result = await apiService.generateMusic(story.id, story.content, { musicType: 'instrumental' });

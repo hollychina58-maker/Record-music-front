@@ -35,20 +35,17 @@ router.get('/', optionalAuthMiddleware, async (req: AuthRequest, res: Response) 
 
   const where = conditions.join(' AND ');
 
-  // Single query: join users for author nickname, left-join latest music for type+status badge
-  // NOTE: avoid ROW_NUMBER() window function — Turso/libsql drops rows when combined with GROUP BY
+  // Use subqueries instead of JOINs + GROUP BY — avoids Turso/libsql row-dropping issues
   const storyQuery = `
     SELECT s.*,
-           COUNT(DISTINCT c.id) as comment_count,
-           u.nickname as author_nickname,
+           (SELECT COUNT(*) FROM comments WHERE story_id = s.id) as comment_count,
+           (SELECT nickname FROM users WHERE id = s.user_id) as author_nickname,
            (SELECT status FROM music WHERE story_id = s.id ORDER BY created_at DESC LIMIT 1) as music_status,
            (SELECT music_type FROM music WHERE story_id = s.id ORDER BY created_at DESC LIMIT 1) as music_type
     FROM stories s
     LEFT JOIN burned_stories bs ON s.id = bs.story_id
-    LEFT JOIN comments c ON s.id = c.story_id
-    LEFT JOIN users u ON s.user_id = u.id
     WHERE ${where}
-    GROUP BY s.id ORDER BY (s.like_count + COUNT(DISTINCT c.id) * 2) DESC, s.created_at DESC
+    ORDER BY s.like_count DESC, s.created_at DESC
     LIMIT ? OFFSET ?`;
 
   const stories = await dbAll<any>(storyQuery, [...params, limit, offset]);
