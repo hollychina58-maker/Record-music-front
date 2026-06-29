@@ -10,6 +10,7 @@ import { ShareButton } from '../components/ShareButton';
 import { BurnConfirmModal } from '../components/BurnConfirmModal';
 import { MusicPlayer } from '../components/MusicPlayer';
 import { LikeButton } from '../components/LikeButton';
+import { AuthorSidebar } from '../components/AuthorSidebar';
 import './StoryDetailPage.css';
 
 interface MusicInfo {
@@ -341,6 +342,8 @@ export function StoryDetailPage() {
         <div className="cover-hero-placeholder" />
       )}
 
+      <div className="detail-body">
+        <div className="detail-main">
       <main className={`story-content${story.cover_image ? ' story-content--has-cover' : ''}`}>
         <div className="reading-progress-line" />
 
@@ -435,6 +438,11 @@ export function StoryDetailPage() {
       </main>
 
       <CommentSection storyId={story.id} isBurned={story.isBurned} commentLikes={commentLikes} />
+        </div>
+        {story && !story.isBurned && story.user_id && (
+          <AuthorSidebar authorId={story.user_id} authorNickname={story.author_nickname || ''} />
+        )}
+        </div>
 
       {showBurnConfirm && (
         <BurnConfirmModal

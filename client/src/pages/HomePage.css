@@ -518,7 +518,7 @@
 
   .feed-grid {
     grid-template-columns: repeat(2, 1fr);
-    max-width: 760px;
+    max-width: 960px;
     gap: 36px 32px;
   }
 

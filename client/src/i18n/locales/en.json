@@ -321,5 +321,12 @@
   "inspiration.mood": "Mood",
   "inspiration.elements": "Elements",
   "inspiration.inspiration": "Story Inspiration",
-  "inspiration.startWriting": "Start Writing →"
+  "inspiration.startWriting": "Start Writing →",
+  "author.storyCount": "{count} stories",
+  "author.otherStories": "More from this author",
+  "author.noStories": "No stories yet",
+  "follow.follow": "Follow",
+  "follow.following": "Following",
+  "follow.comingSoon": "Coming soon",
+  "msg.comingSoon": "Coming soon"
 }

@@ -507,6 +507,36 @@
 }
 
 /* ===== Responsive ===== */
+/* ===== Desktop Layout — main content + sidebar ===== */
+.detail-body {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-10);
+  max-width: calc(var(--content-narrow) + 280px + var(--space-10));
+  margin: 0 auto;
+  padding: 0 var(--space-6);
+  width: 100%;
+}
+
+.detail-main {
+  flex: 1;
+  min-width: 0;
+  max-width: var(--content-narrow);
+}
+
+/* Hide sidebar below 1024px */
+@media (max-width: 1023px) {
+  .detail-body {
+    display: block;
+    max-width: none;
+    padding: 0;
+  }
+
+  .detail-main {
+    max-width: none;
+  }
+}
+
 @media (max-width: 640px) {
   .detail-page .page-header {
     padding: var(--space-2) var(--space-4);

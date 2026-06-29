@@ -324,5 +324,12 @@
   "inspiration.mood": "情绪基调",
   "inspiration.elements": "场景元素",
   "inspiration.inspiration": "灵感故事开头",
-  "inspiration.startWriting": "开始写作 →"
+  "inspiration.startWriting": "开始写作 →",
+  "author.storyCount": "{count} 篇故事",
+  "author.otherStories": "作者的其他故事",
+  "author.noStories": "该用户还没有发表故事",
+  "follow.follow": "关注",
+  "follow.following": "已关注",
+  "follow.comingSoon": "即将上线",
+  "msg.comingSoon": "即将上线"
 }

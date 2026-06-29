@@ -16,6 +16,7 @@ import { PaymentPage } from './pages/PaymentPage';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { MySpacePage } from './pages/MySpacePage';
 import { PhotoInspirationPage } from './pages/PhotoInspirationPage';
+import { UserProfilePage } from './pages/UserProfilePage';
 
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout').then(m => ({ default: m.AdminLayout })));
 const Dashboard = lazy(() => import('./pages/admin/Dashboard').then(m => ({ default: m.Dashboard })));
@@ -111,6 +112,7 @@ function App() {
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/my-space" element={<MySpacePage />} />
             <Route path="/payment" element={<PaymentPage />} />
+            <Route path="/user/:id" element={<UserProfilePage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/admin" element={<AdminGuard><Suspense fallback={<AdminFallback />}><AdminLayout /></Suspense></AdminGuard>}>
               <Route index element={<Suspense fallback={<AdminFallback />}><Dashboard /></Suspense>} />

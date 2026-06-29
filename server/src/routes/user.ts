@@ -215,4 +215,39 @@ router.get('/users/me/stats', authMiddleware, async (req: Request, res: Response
   });
 });
 
+// ── Public: user profile ──
+router.get('/users/:id/profile', async (req: Request, res: Response) => {
+  const userId = parseInt(req.params.id, 10);
+  const user = await dbGet<any>(
+    `SELECT id, nickname, avatar, bio, created_at,
+            (SELECT COUNT(*) FROM stories WHERE user_id = u.id) as story_count
+     FROM users u WHERE id = ?`, [userId]
+  );
+  if (!user) { res.status(404).json({ error: 'User not found' }); return; }
+  res.json({ data: user });
+});
+
+// ── Public: user's stories ──
+router.get('/users/:id/stories', async (req: Request, res: Response) => {
+  const userId = parseInt(req.params.id, 10);
+  const limit = Math.min(20, parseInt(String(req.query.limit || '6'), 10));
+  const stories = await dbAll<any>(
+    `SELECT s.*, u.nickname as author_nickname,
+            (SELECT COUNT(*) FROM comments WHERE story_id = s.id) as comment_count,
+            (SELECT status FROM music WHERE story_id = s.id ORDER BY created_at DESC LIMIT 1) as music_status
+     FROM stories s
+     LEFT JOIN users u ON s.user_id = u.id
+     LEFT JOIN burned_stories bs ON s.id = bs.story_id
+     WHERE s.user_id = ? AND bs.story_id IS NULL
+     ORDER BY s.created_at DESC LIMIT ?`,
+    [userId, limit]
+  );
+  res.json({ data: stories.map((s: any) => ({ ...s, tags: tryParseTags(s.tags) })) });
+});
+
+function tryParseTags(raw: string | null): string[] | null {
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch { return []; }
+}
+
 export default router;
