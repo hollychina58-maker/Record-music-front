@@ -11,6 +11,12 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   if (!targetType || !targetId) { res.status(400).json({ error: 'targetType and targetId are required' }); return; }
   if (!['story', 'comment'].includes(targetType)) { res.status(400).json({ error: 'targetType must be story or comment' }); return; }
 
+  // Burned stories cannot be interacted with
+  if (targetType === 'story') {
+    const burned = await dbGet('SELECT id FROM burned_stories WHERE story_id = ?', [targetId]);
+    if (burned) { res.status(403).json({ error: 'This story has been burned' }); return; }
+  }
+
   const table = targetType === 'story' ? 'stories' : 'comments';
 
   const existing = await dbGet<{ id: number }>(
