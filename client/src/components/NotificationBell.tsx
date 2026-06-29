@@ -37,13 +37,15 @@ export function NotificationBell() {
     markAllRead();
   };
 
-  const handleClick = async (n: { id: number; type: string; source_id: number; is_read: number }) => {
+  const handleClick = async (n: { id: number; type: string; source_id: number; actor_id?: number | null; is_read: number }) => {
     if (!n.is_read) {
       await apiService.clientPost('/notifications/' + n.id + '/read').catch(() => {});
       markRead(n.id);
     }
     setOpen(false);
-    const target = n.type === 'new_story' ? '/story/' + n.source_id : '/messages/' + n.source_id;
+    const target = n.type === 'new_story'
+      ? '/story/' + n.source_id
+      : '/messages/' + (n.actor_id || n.source_id);
     navigate(target);
   };
 

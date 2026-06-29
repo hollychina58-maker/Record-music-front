@@ -43,15 +43,18 @@ router.get('/messages', authMiddleware, async (req: AuthRequest, res: Response) 
   const userId = req.userId as number;
   const list = await dbAll<any>(
     `SELECT u.id, u.nickname, u.avatar,
-            (SELECT content FROM messages WHERE (from_user_id = m.from_user_id AND to_user_id = m.to_user_id) OR (from_user_id = m.to_user_id AND to_user_id = m.from_user_id) ORDER BY created_at DESC LIMIT 1) as last_content,
-            (SELECT created_at FROM messages WHERE (from_user_id = m.from_user_id AND to_user_id = m.to_user_id) OR (from_user_id = m.to_user_id AND to_user_id = m.from_user_id) ORDER BY created_at DESC LIMIT 1) as last_time,
+            (SELECT content FROM messages WHERE
+              (from_user_id = u.id AND to_user_id = ?) OR (from_user_id = ? AND to_user_id = u.id)
+              ORDER BY created_at DESC LIMIT 1) as last_content,
+            (SELECT created_at FROM messages WHERE
+              (from_user_id = u.id AND to_user_id = ?) OR (from_user_id = ? AND to_user_id = u.id)
+              ORDER BY created_at DESC LIMIT 1) as last_time,
             (SELECT COUNT(*) FROM messages WHERE from_user_id = u.id AND to_user_id = ? AND is_read = 0) as unread
-     FROM (SELECT DISTINCT CASE WHEN from_user_id = ? THEN to_user_id ELSE from_user_id END as other_id,
-           from_user_id, to_user_id
+     FROM (SELECT DISTINCT CASE WHEN from_user_id = ? THEN to_user_id ELSE from_user_id END as other_id
            FROM messages WHERE from_user_id = ? OR to_user_id = ?) m
      JOIN users u ON u.id = m.other_id
-     GROUP BY u.id ORDER BY last_time DESC`,
-    [userId, userId, userId, userId]
+     ORDER BY last_time DESC`,
+    [userId, userId, userId, userId, userId, userId, userId]
   );
   res.json({ data: list });
 });
@@ -63,12 +66,12 @@ router.get('/messages/:userId', authMiddleware, async (req: AuthRequest, res: Re
   const limit = Math.min(50, parseInt(String(req.query.limit || '30'), 10));
   const before = parseInt(String(req.query.before || '0'), 10);
 
-  // Check if blocked (either direction)
-  const blocked = await dbGet(
-    'SELECT id FROM blocked_users WHERE (blocker_id = ? AND blocked_id = ?) OR (blocker_id = ? AND blocked_id = ?)',
-    [userId, otherId, otherId, userId]
+  // Only check if OTHER blocked CURRENT user (prevent sending if you're blocked)
+  const blockedByOther = await dbGet(
+    'SELECT id FROM blocked_users WHERE blocker_id = ? AND blocked_id = ?',
+    [otherId, userId]
   );
-  const isBlocked = !!blocked;
+  const isBlocked = !!blockedByOther;
 
   let query = `SELECT m.*, uf.nickname as from_nickname, ut.nickname as to_nickname
                FROM messages m
