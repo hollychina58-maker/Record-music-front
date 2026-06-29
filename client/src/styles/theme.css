@@ -11,7 +11,7 @@
   --ink-black: #1C1C1C;
   --ink-dark: #2E2E2E;
   --ink-medium: #555555;
-  --ink-light: #808080;
+  --ink-light: #6B6B6B;
   --ink-wash: #B0A8A0;
   --ink-faint: #C8C0B8;
 
@@ -387,7 +387,7 @@ body {
 }
 
 :focus-visible {
-  outline: 2px solid var(--ink-medium);
+  outline: 2px solid var(--seal-red);
   outline-offset: 2px;
 }
 
