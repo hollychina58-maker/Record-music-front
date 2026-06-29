@@ -340,10 +340,47 @@ MiniMax 2.6 生成 120s 音频可能在高峰期需要 2-3 分钟以上。180s (
 
 ### P4 开发者回复（commit 9775d33）
 
-**P4-C1 lyrics_optimizer 缺故事上下文 → ✅ 已修复**：song_ai 模式将 `故事主题：${text.slice(0,300)}` 注入 prompt，MiniMax 据此生成故事相关歌词。
+**P4-C1 lyrics_optimizer 缺故事上下文 → ⚠️ 修复有 bug**：song_ai 模式将 `prompt += '。故事主题：${text.slice(0,300)}'` 注入 prompt。但 `payload.prompt` 在第 302 行已赋值，第 317 行的 `prompt +=` 因 JS 字符串不可变只改了局部变量，**实际 API 请求中 payload.prompt 不含故事上下文**。需将 `payload.prompt = prompt` 移到 lyrics_optimizer 块之后。
 
 **P4-M1 song_ai 浪费 extractLyrics → ✅ 已修复**：song_ai 模式跳过 extractLyrics()，节约一次 MiniMax chat API。
 
 **P4-M2 120s timeout 偏紧 → ✅ 已修复**：≥60s 音乐 timeout 从 180s 改为 240s（4 分钟）。
 
-**第四轮终态：1 严重 + 2 中全部修复。**
+**第四轮待修复：1 项（P4-C1 的 prompt 赋值时机 bug）。**
+
+---
+
+## 🔍 第四轮验证（2026-06-30，commit 9775d33 → 56f02e4）
+
+| # | 问题 | 验证 | 证据 |
+|:---|:---|:---:|:---|
+| **P4-C1** | lyrics_optimizer 缺故事上下文 | ⚠️ **修复有 bug** | `minimax.ts:302` payload.prompt 赋值 → `L317` prompt += 追加故事，但 `payload.prompt` 已固化。需将 `L300-310` payload 构建移到 `L322` 之后 |
+| **P4-M1** | extractLyrics 浪费调用 | ✅ | `music.ts:94-95` — song_ai 模式跳过，注释清晰 |
+| **P4-M2** | 120s timeout 偏紧 | ✅ | `minimax.ts:325` → `durationSec <= 60 ? 120000 : 240000` |
+
+### P4-C1 根因分析
+
+```typescript
+// L289-298: 构建基础 prompt（不含故事上下文）
+let prompt = [...].join(', ');
+
+// L300-310: payload 对象创建 — 此时 prompt 已固化！
+const payload = { prompt, ... };  // ← payload.prompt = 基础 prompt
+
+// L312-321: lyrics_optimizer 块
+prompt += `。故事主题：${text.slice(0, 300)}`;  // ← 只改了局部变量 prompt
+// payload.prompt 仍然是旧值！JS 字符串是不可变的，+= 创建新字符串
+
+// L327: axios.post — payload.prompt 不含故事上下文
+```
+
+**修复**（1 行移动）：
+```typescript
+// 将 L300-310 的 payload 构建移到 L322 之后
+payload.prompt = prompt;  // 在 lyrics_optimizer 块之后重新赋值
+```
+
+### P4-C1 验证修复（commit 907df99）
+
+确认 bug：JS 字符串不可变，`prompt +=` 创建新字符串但 `payload.prompt` 仍指向旧值。
+修复：`lyrics_optimizer` 块后 `payload.prompt = prompt` 重新赋值。
