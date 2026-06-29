@@ -169,7 +169,9 @@ router.get('/users/me/stories', authMiddleware, async (req: Request, res: Respon
   const stories = await dbAll(
     `SELECT s.*, COUNT(c.id) as comment_count FROM stories s
      LEFT JOIN comments c ON s.id = c.story_id
-     WHERE s.user_id = ? GROUP BY s.id ORDER BY s.created_at DESC`,
+     LEFT JOIN burned_stories bs ON s.id = bs.story_id
+     WHERE s.user_id = ? AND bs.story_id IS NULL
+     GROUP BY s.id ORDER BY s.created_at DESC`,
     [userId]
   );
   res.json({ success: true, data: stories });

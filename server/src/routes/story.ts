@@ -64,13 +64,16 @@ router.get('/', optionalAuthMiddleware, async (req: AuthRequest, res: Response) 
 
 router.get('/:id', async (req: Request, res: Response) => {
   const story = await dbGet<any>(
-    `SELECT s.*, u.nickname as author_nickname
-     FROM stories s LEFT JOIN users u ON s.user_id = u.id
+    `SELECT s.*, u.nickname as author_nickname,
+            CASE WHEN bs.story_id IS NOT NULL THEN 1 ELSE 0 END as isBurned
+     FROM stories s
+     LEFT JOIN users u ON s.user_id = u.id
+     LEFT JOIN burned_stories bs ON s.id = bs.story_id
      WHERE s.id = ?`,
     [req.params.id]
   );
   if (!story) { res.status(404).json({ error: 'Story not found' }); return; }
-  res.json({ data: { ...story, tags: parseTags(story.tags) } });
+  res.json({ data: { ...story, tags: parseTags(story.tags), isBurned: !!story.isBurned } });
 });
 
 router.post('/', authMiddleware, async (req: AuthRequest, res: Response) => {
