@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import axios from 'axios';
 
 function getR2Client(): S3Client | null {
@@ -56,5 +56,26 @@ export async function uploadToR2(
   } catch (err) {
     console.error('[R2] Upload failed for', bucketKey, ':', err instanceof Error ? err.message : err);
     return sourceUrl; // fallback to original URL on failure
+  }
+}
+
+/**
+ * Delete a file from Cloudflare R2 by its public URL.
+ * Extracts the key from the URL path. No-op if R2 is not configured or URL is not from R2.
+ */
+export async function deleteFromR2(fileUrl: string): Promise<void> {
+  const client = getR2Client();
+  const bucket = process.env.R2_BUCKET_NAME;
+  if (!client || !bucket || !fileUrl) return;
+
+  // Extract key from R2 URL path (e.g. https://pub-xxx.r2.dev/music/10/33.mp3 → music/10/33.mp3)
+  try {
+    const url = new URL(fileUrl);
+    const key = url.pathname.slice(1); // remove leading /
+    if (!key) return;
+    await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
+    console.log('[R2] Deleted:', key);
+  } catch (err) {
+    console.error('[R2] Delete failed for', fileUrl, ':', err instanceof Error ? err.message : err);
   }
 }
