@@ -72,6 +72,19 @@
   transition: all var(--transition-fast);
 }
 
+.user-actions {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: center;
+}
+
+.user-msg-btn {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .user-follow-btn:disabled {
   opacity: 0.4;
   cursor: default;

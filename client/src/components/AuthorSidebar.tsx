@@ -75,10 +75,11 @@ export function AuthorSidebar({ authorId, authorNickname, excludeStoryId }: { au
               {following ? t('follow.following') : t('follow.follow')}
             </button>
           )}
-          {/* Message button — functional in Phase C */}
-          <button className="sidebar-btn sidebar-btn--msg" disabled title={t('msg.comingSoon')}>
-            ✉
-          </button>
+          {isAuthenticated && useAuthStore.getState().user?.id !== authorId && (
+            <Link to={'/messages/' + authorId} className="sidebar-btn sidebar-btn--msg">
+              ✉
+            </Link>
+          )}
         </div>
       </div>
 

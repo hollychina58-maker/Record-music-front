@@ -24,6 +24,8 @@ import adminCouponRoutes from './routes/admin/coupons.js';
 import adminOrderRoutes from './routes/admin/orders.js';
 import followRoutes from './routes/follow.js';
 import notificationRoutes from './routes/notification.js';
+import messageRoutes from './routes/message.js';
+import blockRoutes from './routes/block.js';
 
 dotenv.config();
 
@@ -105,6 +107,8 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/likes', likeRoutes);
 app.use('/api', followRoutes);
 app.use('/api', notificationRoutes);
+app.use('/api', messageRoutes);
+app.use('/api', blockRoutes);
 app.use('/api/admin', adminDashboardRoutes);
 app.use('/api/admin', adminStoryRoutes);
 app.use('/api/admin', adminCommentRoutes);

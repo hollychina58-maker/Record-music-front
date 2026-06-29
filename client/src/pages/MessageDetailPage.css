@@ -1,0 +1,103 @@
+.chat-page {
+  display: flex;
+  flex-direction: column;
+  height: calc(100svh - var(--nav-height));
+  background: var(--color-page);
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-4) var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.chat-bubble-wrap {
+  display: flex;
+}
+
+.chat-bubble-wrap--mine {
+  justify-content: flex-end;
+}
+
+.chat-bubble {
+  max-width: 70%;
+  padding: 10px 14px;
+  border-radius: var(--radius-lg);
+  background: var(--paper-white);
+  border: 1px solid rgba(28,28,28,0.06);
+  font-family: var(--font-ink);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  color: var(--ink-deep);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.chat-bubble--mine {
+  background: var(--ink-black);
+  color: var(--paper-white);
+  border-color: var(--ink-dark);
+}
+
+.chat-input-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--paper-white);
+  border-top: 1px solid rgba(28,28,28,0.06);
+}
+
+.chat-input {
+  flex: 1;
+  border: 1px solid rgba(28,28,28,0.1);
+  border-radius: var(--radius-lg);
+  padding: 10px 14px;
+  font-family: var(--font-ink);
+  font-size: var(--text-sm);
+  resize: none;
+  outline: none;
+  max-height: 120px;
+  line-height: 1.5;
+}
+
+.chat-input:focus {
+  border-color: var(--ink-faint);
+}
+
+.chat-send-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: var(--radius-lg);
+  background: var(--ink-black);
+  color: var(--paper-white);
+  font-family: var(--font-ink);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: opacity var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.chat-send-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.chat-blocked-hint {
+  width: 100%;
+  text-align: center;
+  padding: var(--space-3);
+  color: var(--seal-red);
+  font-family: var(--font-ink);
+  font-size: var(--text-sm);
+}
+
+@media (max-width: 640px) {
+  .chat-messages {
+    padding: var(--space-3);
+  }
+}

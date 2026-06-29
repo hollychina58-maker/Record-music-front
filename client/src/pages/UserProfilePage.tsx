@@ -96,18 +96,23 @@ export function UserProfilePage() {
           <div className="user-stats">
             <span>{t('author.storyCount', { count: author.story_count })}</span>
           </div>
+          <div className="user-actions">
           {!isOwn && (
-            <button className="user-follow-btn" disabled={followLoading} onClick={async () => {
-              setFollowLoading(true);
-              try {
-                const d: any = await apiService.clientPost('/users/' + id + '/follow');
-                setFollowing(d.following ?? false);
-              } catch { /* ignore */ }
-              finally { setFollowLoading(false); }
-            }}>
-              {following ? t('follow.following') : t('follow.follow')}
-            </button>
+            <>
+              <button className="user-follow-btn" disabled={followLoading} onClick={async () => {
+                setFollowLoading(true);
+                try {
+                  const d: any = await apiService.clientPost('/users/' + id + '/follow');
+                  setFollowing(d.following ?? false);
+                } catch { /* ignore */ }
+                finally { setFollowLoading(false); }
+              }}>
+                {following ? t('follow.following') : t('follow.follow')}
+              </button>
+              <Link to={'/messages/' + id} className="user-follow-btn user-msg-btn">✉ {t('msg.send')}</Link>
+            </>
           )}
+          </div>
         </section>
 
         {/* Stories */}

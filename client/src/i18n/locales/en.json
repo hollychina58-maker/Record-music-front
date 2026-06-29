@@ -336,6 +336,12 @@
   "notif.markAllRead": "Mark all read",
   "notif.newStory": "{author} published a new story",
   "notif.newMessage": "{from} sent a message",
+  "msg.title": "Messages",
+  "msg.chat": "Chat",
+  "msg.send": "Send",
+  "msg.placeholder": "Write a message...",
+  "msg.blocked": "You have been blocked by this user",
+  "msg.noConversations": "No conversations"
   "time.justNow": "just now",
   "time.minAgo": "m ago",
   "time.hrAgo": "h ago",
