@@ -341,7 +341,7 @@
   "msg.send": "Send",
   "msg.placeholder": "Write a message...",
   "msg.blocked": "You have been blocked by this user",
-  "msg.noConversations": "No conversations"
+  "msg.noConversations": "No conversations",
   "time.justNow": "just now",
   "time.minAgo": "m ago",
   "time.hrAgo": "h ago",

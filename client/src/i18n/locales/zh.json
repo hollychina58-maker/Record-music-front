@@ -344,7 +344,7 @@
   "msg.send": "发送",
   "msg.placeholder": "写下私信...",
   "msg.blocked": "对方已将你拉黑，无法发送私信",
-  "msg.noConversations": "暂无私信"
+  "msg.noConversations": "暂无私信",
   "time.justNow": "刚刚",
   "time.minAgo": "分钟前",
   "time.hrAgo": "小时前",
