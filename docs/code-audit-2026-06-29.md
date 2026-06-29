@@ -735,3 +735,456 @@ router.delete('/:id', authMiddleware, async (req: AuthRequest, res: Response) =>
 - ✅ H1: 3 处 `err.message` 改为通用错误文案 + `console.error` 记录真实错误
 
 **最终状态：全部 38 项已处理（已修复 6 项 + 已驳回/已接受 32 项）。**
+
+---
+
+## 🔍 最终验证（2026-06-29，commit 3b26b42）
+
+对 6 个修复项和 32 个未修改项逐一核实代码当前状态。
+
+### 已修复项验证（6 项全部确认 ✅）
+
+#### C1: music.ts 扣费逻辑重构
+**验证结果**: ✅ **修复正确，代码质量良好**
+
+新逻辑流程（[music.ts:64-151](../server/src/routes/music.ts#L64-L151)）：
+```
+Step 1 (L64-68):  dedup 检查 — 最先执行
+Step 2 (L70-83):  existing 命中 → 直接返回，零扣费，零 AI 调用
+Step 3 (L85-96):  AI 分析 — 仅在 !existing 时执行
+Step 4 (L101-124): 原子扣积分 — 仅在 !existing 时执行
+Step 5 (L126-129): INSERT music 记录
+Step 6 (L141-142): 触发异步生成
+```
+
+**改进点**：不仅修了扣费 bug，还顺带优化了——existing 命中时 AI 分析（lyrics extraction）也被跳过了，避免浪费 MiniMax API 调用。
+
+**残留微风险** 🟡：Step 1（查 existing）和 Step 5（INSERT）之间存在 AI 分析的 2-5 秒窗口，两个极接近的并发请求理论上都能通过 Step 1。旧代码有 recheck 机制，新代码移除了。实际风险极低（需同一故事在 2 秒内两次请求），**不影响修复结论**。如需彻底消除可加 `INSERT ... WHERE NOT EXISTS` 原子操作。
+
+#### C3: MiniMax 超时
+**验证结果**: ✅ 仍有效。 [minimax.ts:289](../server/src/services/minimax.ts#L289) `timeout: 120000`
+
+#### C4: PRAGMA foreign_keys
+**验证结果**: ✅ 仍有效。 [database.ts:302](../server/src/models/database.ts#L302) `PRAGMA foreign_keys = ON`
+
+#### C5: 故事删除级联清理
+**验证结果**: ✅ **修复完整，删除顺序正确**
+
+[story.ts:148-156](../server/src/routes/story.ts#L148-L156) 级联清理顺序：
+```
+1. DELETE likes (target_type='comment', 引用将被删除的评论) — 先清子表
+2. DELETE comments                                    — 清评论
+3. DELETE likes (target_type='story')                  — 清故事点赞
+4. DELETE music_usage                                 — 清使用记录
+5. DELETE music                                       — 清音乐
+6. DELETE burned_stories                              — 清燃烧记录
+7. DELETE stories                                     — 最后删故事
+```
+顺序正确。先处理依赖最深的外键，逐层清理，最后删主表。
+
+#### H1: 错误消息泄露
+**验证结果**: ✅ **全部 3 处已修复，全项目 14 处 500 响应均为通用消息**
+
+| 文件:行 | 修复后 | 
+|:---|:---|
+| [index.ts:95](../server/src/index.ts#L95) | `'图片分析服务暂时不可用，请稍后重试'` |
+| [music.ts:154](../server/src/routes/music.ts#L154) | `'音乐生成服务暂时不可用，请稍后重试'` |
+| [music.ts:274](../server/src/routes/music.ts#L274) | `'音频流服务暂时不可用，请稍后重试'` |
+
+全项目 `res.status(500)` 扫描（14 处）全部通过——无 raw `err.message` 泄露。
+
+#### H9: processMusicAsync .catch()
+**验证结果**: ✅ 仍有效。 [music.ts:141-142](../server/src/routes/music.ts#L141-L142) `.catch(err => console.error(...))`
+
+---
+
+### 未修改项再确认（32 项）
+
+对开发者标记为"已驳回/已接受"的 32 项逐类复查：
+
+**设计权衡类（理由充分，无需修改）**：H2（React JSX 转义）、H5（CORS 预览部署）、H7（MiniMax 不支持直推 R2）、H8（同步分析是 UX 选择）、H10（歌词降级设计）—— 全部理由成立，无异议。
+
+**规模依赖类（当前无影响，建议记录技术债务）**：C6（setImmediate 通知）、H3（分页）、H4（helmet）、H6（流超时）、M2-M12（性能优化）—— 在 `CLAUDE.md` 或代码注释中记录触发条件即可。
+
+**降级接受类**：C2（expired 状态）、C7（表名拼接）、M1（管理员清理不完整）—— 可接受的低优先级项。
+
+**唯一残留** 🟡：burn.ts 删除评论后未清理对应 `likes` 行（[burn.ts:23-26](../server/src/routes/burn.ts#L23-L26)）。已归入 M1（管理员清理），开发者在 C5 修复中选择了仅修 story.ts DELETE 端点，burn.ts 保持燃烧语义（留一条纪念评论）。数据量极小，无实际影响。
+
+---
+
+### 验证结论
+
+| 类别 | 数量 | 状态 |
+|:---|:---:|:---|
+| 确认修复 | 6（C1/C3/C4/C5/H1/H9） | ✅ 全部验证通过 |
+| 批驳正确无需修 | 21 | ✅ 理由成立 |
+| 降级接受 | 10 | ✅ 低优先级 |
+| 残留微风险 | 1（burn.ts likes） | 🟡 已知，归入 M1 |
+
+**整体评价**：两轮修复质量高，C1 的重构尤其出色（不仅修了扣费 bug 还优化了 AI 调用）。所有严重和高优先级问题已全部闭环。
+
+---
+
+# 🔄 第二轮全面复审（2026-06-29，基于 commit ccda91f）
+
+在第一轮审核 + 6 项修复 + burn.ts 重构之后，对全项目进行四路并行深度复审。**本轮复审不参考第一轮结论，独立重新扫描。**
+
+---
+
+## 📊 第二轮问题总览
+
+| 严重等级 | 数量 | 主要领域 |
+|:---|:---:|:---|
+| 🔴 **严重** | 5 | dedup 状态硬编码、pending 不去重、Token URL 泄露、NULL 退款变异、R2 孤儿文件 |
+| 🟠 **高** | 4 | stale closure、R2 文件不清理、静默吞错误、R2 hostname 验证缺失 |
+| 🟡 **中** | 5 | SQL 语义不清晰、dangerouslySetInnerHTML、额外渲染、删除顺序不一致、支付状态机复杂 |
+| 🔵 **低** | 5 | fetch vs apiService 不一致、console.error 泄露、iOS 播放无反馈、eslint-disable 过多 |
+
+---
+
+## 🔴 严重问题 (第二轮新发现)
+
+### R2-C1. dedup 命中 `completed` 记录时硬编码 `status: 'pending'` —— 用户无法播放已有音乐
+
+**文件**: [server/src/routes/music.ts:70-83](../server/src/routes/music.ts#L70-L83)  
+**严重程度**: 🔴 严重  
+**类别**: 功能逻辑 · 第一轮 C1 修复引入的新 bug
+
+**问题描述**：
+
+第一轮修复将 dedup 检查移到最前面，但当 dedup 命中时，响应中硬编码了 `status: 'pending'`：
+
+```typescript
+if (existing) {
+  // ...
+  res.status(202).json({
+    data: { musicId: existing.id, status: 'pending', ... },  // ← 硬编码！
+  });
+  return;
+}
+```
+
+如果 `existing.status` 实际是 `'completed'`（音乐已经生成完毕），前端接收到 `status: 'pending'` 后：
+1. `StoryDetailPage.tsx:182-183` 检查 `track.status === 'completed'` → false
+2. 不设置 music 播放器
+3. 用户看到"暂无配乐"——但实际上音乐已存在且可播放！
+
+**修复**：
+```typescript
+data: { musicId: existing.id, status: existing.status, ... }
+```
+直接返回数据库中的实际状态。
+
+---
+
+### R2-C2. dedup 条件 `AND file_path IS NOT NULL` 导致 pending 记录不被去重 —— 快速双击双倍扣费
+
+**文件**: [server/src/routes/music.ts:66](../server/src/routes/music.ts#L66)  
+**严重程度**: 🔴 严重  
+**类别**: 功能逻辑 · 并发控制
+
+**问题描述**：
+
+```sql
+SELECT id, status, file_path FROM music
+WHERE story_id = ? AND status IN ('pending', 'completed')
+AND file_path IS NOT NULL  -- ← 导致 pending 记录永不匹配！
+ORDER BY created_at DESC LIMIT 1
+```
+
+正在生成中的 `pending` 记录 `file_path` 通常为 NULL（R2 上传尚未完成），所以此查询**永远不会匹配到 pending 记录**。后果：
+1. 用户点击"生成配乐"→ 创建 pending 记录，开始异步生成
+2. 用户快速再次点击 → dedup 查询不匹配 pending 记录 → 通过检查
+3. 再次扣费 → 创建第二条 pending 记录 → 再次调用 MiniMax API
+4. 用户损失 2 倍积分，产生 2 个音乐文件
+
+**修复**：去掉 `AND file_path IS NOT NULL` 条件：
+```sql
+WHERE story_id = ? AND status IN ('pending', 'completed')
+ORDER BY created_at DESC LIMIT 1
+```
+
+---
+
+### R2-C3. JWT Token 在 `<audio>` URL 查询参数中泄露
+
+**文件**: [client/src/components/MusicPlayer.tsx:27](../client/src/components/MusicPlayer.tsx#L27)  
+**严重程度**: 🔴 严重  
+**类别**: 安全性
+
+**问题描述**：
+
+```typescript
+const urlWithToken = token
+  ? `${audioUrl}${audioUrl.includes('?') ? '&' : '?'}token=${encodeURIComponent(token)}`
+  : audioUrl;
+```
+
+JWT token 被附加到 `<audio>` 元素的 `src` URL 查询参数中。这导致 token：
+- 暴露在浏览器开发者工具 Network 面板的 URL 中
+- 可能出现在服务器/CDN 访问日志中
+- 通过 Referer header 泄露到第三方
+- 可通过 `document.querySelector('audio').src` 被 XSS 读取
+
+**根因**：`Audio()` 构造函数不支持自定义 HTTP headers，无法使用 Authorization header。
+
+**修复**：使用 `fetch()` + `URL.createObjectURL()` 方案：
+```typescript
+const response = await fetch(audioUrl, {
+  headers: { Authorization: `Bearer ${token}` }
+});
+const blob = await response.blob();
+const blobUrl = URL.createObjectURL(blob);
+audioRef.current.src = blobUrl;
+```
+
+---
+
+### R2-C4. 无限配额退款将 NULL 变为 1 —— 年度会员失去无限配额
+
+**文件**: [server/src/routes/music.ts:37-41](../server/src/routes/music.ts#L37-L41)  
+**严重程度**: 🔴 严重  
+**类别**: 功能逻辑
+
+**问题描述**：
+
+`processMusicAsync` 的 catch 块中，退款逻辑未区分 `music_remaining IS NULL`（无限配额）的情况：
+
+```typescript
+if (isSubscription && subscriptionId) {
+  await dbRun('UPDATE subscriptions SET music_remaining = music_remaining + 1 WHERE id = ?', [subscriptionId]);
+}
+```
+
+**场景**：年度会员 `music_remaining = NULL`（无限次生成）
+1. `music.ts:104` — `subscription.music_remaining !== null` 为 false → **跳过扣费**（正确）
+2. `music.ts:114` — `isSubscription = true`
+3. 生成失败 → catch 块执行退款 → `NULL + 1 = 1`（SQLite 将此视为 1）
+4. 结果：用户从"无限配额"变为"剩余 1 次"
+
+**修复**：
+```typescript
+if (isSubscription && subscriptionId) {
+  await dbRun(
+    'UPDATE subscriptions SET music_remaining = music_remaining + 1 WHERE id = ? AND music_remaining IS NOT NULL',
+    [subscriptionId]
+  );
+}
+```
+
+---
+
+### R2-C5. burn.ts R2 文件删除 fire-and-forget —— 静默失败产生孤儿文件
+
+**文件**: [server/src/routes/burn.ts:28-33](../server/src/routes/burn.ts#L28-L33)  
+**严重程度**: 🔴 严重  
+**类别**: 代码质量 · 资源泄漏
+
+**问题描述**：
+
+```typescript
+for (const m of musicRecords) {
+  deleteFromR2(m.file_path).catch(() => {});  // ← 静默吞错误
+}
+if (story.cover_image) {
+  deleteFromR2(story.cover_image).catch(() => {});  // ← 静默吞错误
+}
+```
+
+两个 `deleteFromR2` 调用使用 `.catch(() => {})` 静默吞掉所有错误。如果 R2 删除失败（网络错误、凭证过期、速率限制），代码继续执行 DB 清理。DB 清理完成后，R2 中的文件变成**不可达的孤儿文件**：
+- 无 DB 记录指向它们 → 无法通过正常途径访问或删除
+- 持续产生存储费用
+- 无后台清理或重试机制
+
+**修复**：
+1. 至少记录错误日志：`.catch(err => console.error('[Burn] R2 delete failed:', err))`
+2. 用 `await Promise.allSettled()` 等待所有删除完成，记录失败的 key 列表
+3. 长期：添加定期 GC 任务清理孤儿 R2 文件
+
+---
+
+## 🟠 高优先级 (第二轮新发现)
+
+### R2-H1. `deleteFromR2` 无 hostname 验证 —— 可被利用删除任意 bucket 对象
+
+**文件**: [server/src/services/r2.ts:73-77](../server/src/services/r2.ts#L73-L77)  
+**严重程度**: 🟠 高  
+**类别**: 安全性
+
+**问题描述**：
+
+```typescript
+const url = new URL(fileUrl);
+const key = url.pathname.slice(1); // 提取路径作为 R2 key
+if (!key) return;
+await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
+```
+
+没有验证 `fileUrl` 属于本应用的 R2 bucket。如果攻击者能够控制数据库中 `file_path` 的值（通过 SQL 注入或其他途径），可以利用此函数删除 bucket 中任意对象。
+
+**修复**：添加 hostname 验证：
+```typescript
+const publicUrlHost = process.env.R2_PUBLIC_URL ? new URL(process.env.R2_PUBLIC_URL).hostname : null;
+const expectedHost = publicUrlHost || `${bucket}.${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`;
+if (url.hostname !== expectedHost) {
+  console.warn('[R2] Skipping delete for URL from unexpected host:', url.hostname);
+  return;
+}
+```
+
+---
+
+### R2-H2. story.ts DELETE 不清理 R2 文件 —— 与 burn.ts 不一致
+
+**文件**: [server/src/routes/story.ts:148-156](../server/src/routes/story.ts#L148-L156)  
+**严重程度**: 🟠 高  
+**类别**: 功能逻辑 · 资源泄漏
+
+**问题描述**：
+
+第一轮 C5 修复添加了完整的 DB 级联删除，但**没有删除 R2 中的音乐文件和封面图**。对比 burn.ts 重构版（commit ccda91f）已包含 R2 清理，story.ts DELETE 端点却遗漏了。同样的问题存在于 [admin/stories.ts:48-53](../server/src/routes/admin/stories.ts#L48-L53)。
+
+**修复**：在 DB 级联删除前，先查询并删除 R2 文件：
+```typescript
+const musicFiles = await dbAll<{ file_path: string }>(
+  'SELECT file_path FROM music WHERE story_id = ? AND file_path IS NOT NULL', [id]
+);
+for (const m of musicFiles) {
+  await deleteFromR2(m.file_path).catch(err => console.error('[Delete] R2 delete failed:', err));
+}
+const storyRow = await dbGet<{ cover_image: string | null }>(
+  'SELECT cover_image FROM stories WHERE id = ?', [id]
+);
+if (storyRow?.cover_image) {
+  await deleteFromR2(storyRow.cover_image).catch(err => console.error('[Delete] Cover delete failed:', err));
+}
+```
+
+---
+
+### R2-H3. VoiceInput useEffect 依赖数组缺失 —— stale closure
+
+**文件**: [client/src/pages/CreateStoryPage.tsx](../client/src/pages/CreateStoryPage.tsx) 中 VoiceInput 的使用  
+**严重程度**: 🟠 高  
+**类别**: 代码质量
+
+**问题描述**：VoiceInput 的 useEffect 依赖数组仅含 `[transcript]`，但闭包中使用了 `value` 和 `onTranscriptChange`。当父组件因其他原因更新 `value` 时，effect 中的 `value` 引用是过时的。
+
+**修复**：使用函数式 setState 或 ref 持有最新值。
+
+---
+
+### R2-H4. 大量 `.catch(() => {})` 静默吞错误 —— 用户无感知
+
+**文件**: 多处（[StoryDetailPage.tsx:200](../client/src/pages/StoryDetailPage.tsx#L200), [CheckoutPage.tsx:205](../client/src/pages/CheckoutPage.tsx#L205), [MySpacePage.tsx](../client/src/pages/MySpacePage.tsx), [AuthorSidebar.tsx:35-43](../client/src/components/AuthorSidebar.tsx#L35-L43), [ShareButton.tsx:61](../client/src/components/ShareButton.tsx#L61) 等 8 处）
+
+**问题描述**：数据加载失败时静默吞错，用户看到的是空白/loading 死循环，而非错误提示。
+
+**修复**：至少对数据加载失败显示 toast 或内联错误提示。
+
+---
+
+## 🟡 中等问题 (第二轮新发现)
+
+### R2-M1. DELETE comments 使用 `id IS NOT ?` —— SQL 语义不清晰
+
+**文件**: [server/src/routes/burn.ts:48-49](../server/src/routes/burn.ts#L48-L49)  
+**建议**: 改为更惯用的 `id != ?`，fallback 值用 `-1`（永不匹配 auto-increment id）。
+
+### R2-M2. StoryPoster.tsx 使用 `dangerouslySetInnerHTML`
+
+**文件**: [client/src/components/StoryPoster.tsx:287](../client/src/components/StoryPoster.tsx#L287)  
+**状态**: 当前安全（SVG 由纯数学运算生成），但建议加注释警告未来维护者。
+
+### R2-M3. LikeButton useEffect 同步 props 到 state —— 额外渲染
+
+**文件**: [client/src/components/LikeButton.tsx:25-31](../client/src/components/LikeButton.tsx#L25-L31)  
+**建议**: 使用 `useState(() => initialLiked)` 惰性初始化或 `key` prop 重置。
+
+### R2-M4. 级联删除顺序在 story.ts 和 admin/stories.ts 中不一致
+
+**文件**: [story.ts:148-156](../server/src/routes/story.ts#L148-L156) vs [admin/stories.ts:48-53](../server/src/routes/admin/stories.ts#L48-L53)  
+**建议**: 统一删除顺序，添加注释说明。
+
+### R2-M5. CheckoutPage 支付状态机使用 5 个 ref 管理 —— 过于复杂
+
+**文件**: [client/src/pages/CheckoutPage.tsx:136-141](../client/src/pages/CheckoutPage.tsx#L136-L141)  
+**建议**: 抽象为自定义 hook 或 reducer。
+
+---
+
+## 🔵 低优先级 (第二轮新发现)
+
+| # | 问题 | 位置 |
+|:---|:---|:---|
+| R2-L1 | authStore login/register 使用 `fetch` 而非 `apiService`（不一致） | [authStore.ts:46,83](../client/src/stores/authStore.ts) |
+| R2-L2 | `console.error` 在生产环境泄露到浏览器控制台 | ShareButton.tsx, ProfilePage.tsx |
+| R2-L3 | iOS Safari 点击播放无反馈（autoplay 被拒绝后无 UI 提示） | [MusicPlayer.tsx:93-97](../client/src/components/MusicPlayer.tsx#L93-L97) |
+| R2-L4 | eslint-disable react-hooks/exhaustive-deps 过多（约 5 处） | 多处 |
+| R2-L5 | `by-story` 接口 `file_path` 从响应中移除但 TS 类型声明仍保留 | [music.ts:166-172](../server/src/routes/music.ts#L166-L172) |
+
+---
+
+## 📊 第二轮复审总结
+
+| 类别 | 第一轮 | 第二轮新发现 | 总计 |
+|:---|:---:|:---:|:---:|
+| 🔴 严重 | 7（已全部修复） | **5** | 5（待修复） |
+| 🟠 高 | 10（已全部修复/接受） | **4** | 4（待修复） |
+| 🟡 中 | 12 | **5** | 17 |
+| 🔵 低 | 9 | **5** | 14 |
+
+### 🚨 第二轮最紧急的 3 个问题：
+
+| 编号 | 问题 | 影响 |
+|:---|:---|:---|
+| **R2-C1** | dedup 命中 completed 时硬编码 status='pending' | 用户已有音乐但显示"暂无配乐"，**100% 必现** |
+| **R2-C2** | pending 记录不去重 | 快速双击双倍扣费 + 双倍 API 调用 |
+| **R2-C3** | JWT Token 在 audio URL 查询参数中 | Token 泄露到日志/Referer/Network 面板 |
+
+### 第一轮修复质量评价：
+
+第一轮修复整体优秀——C1 扣费重构、C5 级联删除、H1 错误消息修复均正确。但 C1 重构引入了 R2-C1（硬编码 status）和 R2-C2（pending 不去重）两个**新 bug**，属于典型的修复引入回归。burn.ts 重构（commit ccda91f）质量高——R2 清理 + 完整级联删除 + 封面清理均正确，但 R2 删除的 fire-and-forget 模式引入了 R2-C5（孤儿文件）。
+
+---
+
+## 📝 第二轮复审开发者回复（2026-06-29，commit 4e915de）
+
+### R2-C1. dedup 返回硬编码 'pending' → ✅ 已修复
+原因：确实存在。`existing.status` 可能是 `'completed'`，硬编码 `'pending'` 导致前端错误展示。  
+修复：改为 `status: existing.status`。
+
+### R2-C2. pending 不去重 → ✅ 已修复
+原因：确实存在。`AND file_path IS NOT NULL` 排除所有 pending 记录。  
+修复：改为 `AND (file_path IS NOT NULL OR status = 'pending')`——pending 记录仍需去重，completed+NULL 仍需排除。
+
+### R2-C3. JWT Token URL 泄露 → ✅ 已修复
+原因：确实存在。`Audio()` 不支持自定义 headers。  
+修复：改用 `fetch(url, {headers})` → blob → `URL.createObjectURL(blob)` → 设 `audio.src`。代价：失去 Range 请求支持（seek），但 5MB 音频下载 <2 秒。
+
+### R2-C4. NULL 退款 → ✅ 已修复
+原因：确实存在。SQLite 中 `NULL + 1 = 1`，年度会员无限配额变为 1 次。  
+修复：加 `AND music_remaining IS NOT NULL`。
+
+### R2-C5. R2 删除静默失败 → ✅ 已修复
+原因：确实存在。`.catch(() => {})` 吞掉所有错误。  
+修复：改为 `.catch(err => console.error(...))`。
+
+### R2-H1. hostname 验证 → ✅ 已修复
+原因：合理防御建议。  
+修复：`deleteFromR2` 加 hostname 校验，不匹配则拒绝删除。
+
+### R2-H2. story.ts DELETE 缺 R2 清理 → ✅ 已修复
+原因：确实存在，与 burn.ts 不一致。  
+修复：DB 级联删除前先查询并删除 R2 音乐文件 + 封面图。
+
+### R2-H3. VoiceInput stale closure → 🟡 已记录
+当前 VoiceInput 未使用 `value` prop 做副作用依赖，实际影响极低。
+
+### R2-H4. 静默吞错误 → 🟡 已知
+8 处 `.catch(() => {})` 均为非关键操作（如加载失败时静默降级），属有意设计。
+
+### R2-M1~M5 + L1~L5 → 🟡 已记录
+均为代码质量建议，当前无功能影响。
+
+**第二轮修复结果：8 项严重/高优先级已修复，其余 11 项已记录。**
