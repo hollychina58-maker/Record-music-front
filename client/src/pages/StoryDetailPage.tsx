@@ -18,6 +18,8 @@ interface MusicInfo {
   status: 'pending' | 'completed' | 'failed' | 'expired';
   file_path: string | null;
   style: string | null;
+  musicType?: string;
+  generationParams?: string;
 }
 
 export function StoryDetailPage() {
@@ -410,7 +412,17 @@ export function StoryDetailPage() {
                 className="regenerate-music-btn"
                 onClick={async () => {
                   try {
-                    const result = await apiService.generateMusic(story.id, story.content, { musicType: 'instrumental' });
+                    // Restore original music options from the expired/failed record
+                    let genOpts: any = { musicType: 'instrumental' };
+                    if (music.generationParams) {
+                      try {
+                        const prev = JSON.parse(music.generationParams);
+                        genOpts = { ...prev.musicOptions, lyricsMode: prev.lyricsMode || 'ai_generated' };
+                      } catch { /* keep defaults */ }
+                    } else if (music.musicType) {
+                      genOpts.musicType = music.musicType;
+                    }
+                    const result = await apiService.generateMusic(story.id, story.content, genOpts);
                     addToast('info', '🎵 配乐生成中，请稍后...', { duration: 4000 });
                     setMusic({ id: result.musicId, status: 'pending', file_path: null, style: null });
                     pollUntilReady(result.musicId);

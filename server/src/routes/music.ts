@@ -160,7 +160,7 @@ router.get('/by-story/:storyId', optionalAuthMiddleware, async (req: AuthRequest
   // If file_path is NULL (expired CDN URL that couldn't regenerate), mark as 'expired'
   // so the client can show a "regenerate" prompt instead of a broken player.
   const records = await dbAll<any>(
-    "SELECT id, story_id, status, style, file_path, created_at FROM music WHERE story_id = ? AND status != 'failed' ORDER BY created_at DESC",
+    "SELECT id, story_id, status, style, file_path, music_type, generation_params, created_at FROM music WHERE story_id = ? AND status != 'failed' ORDER BY created_at DESC",
     [req.params.storyId]
   );
   const data = records.map(r => ({
@@ -168,6 +168,8 @@ router.get('/by-story/:storyId', optionalAuthMiddleware, async (req: AuthRequest
     story_id: r.story_id,
     status: r.status === 'completed' && !r.file_path ? 'expired' : r.status,
     style: r.style,
+    musicType: r.music_type,
+    generationParams: r.generation_params,
     created_at: r.created_at,
   }));
   res.json({ data });
