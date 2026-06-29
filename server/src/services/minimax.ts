@@ -209,13 +209,39 @@ export interface MusicOptions {
   musicType?: 'instrumental' | 'song';
   musicMood?: string;
   musicGenre?: string;
+  duration?: 'short' | 'medium' | 'long';
+  lyricsMode?: 'story_as_lyrics' | 'ai_generated';
 }
 
 const GENRE_STYLES: Record<string, string> = {
-  chinese_folk: 'Chinese folk style with pentatonic melodies, featuring erhu, guzheng, dizi, pipa',
-  classical: 'Western classical style with orchestral arrangements, featuring strings, woodwinds, piano',
-  pop: 'modern pop style with catchy melodies, featuring acoustic guitar, piano, light beats',
+  chinese_folk: 'Chinese folk style with pentatonic melodies, featuring erhu, guzheng, dizi, pipa, natural reverb',
+  classical: 'Western classical style with orchestral arrangements, featuring strings, woodwinds, piano, dynamic range',
+  pop: 'modern pop style with catchy melodies, featuring acoustic guitar, piano, light beats, radio-ready production',
   opera: 'Chinese opera style with dramatic vocals, featuring gong, erhu, suona, percussion',
+  electronic: 'electronic ambient style, synth pads, digital texture, atmospheric sound design',
+  jazz: 'jazz style, warm swing feel, double bass, piano trio, gentle brush drums',
+  rock: 'rock style, electric guitar, driving drums, energetic and powerful',
+  lofi: 'lo-fi hip-hop style, chill beats, vinyl crackle texture, warm tape saturation',
+  rnb: 'R&B style, soulful and smooth, groovy bass, electric piano, modern production',
+  world: 'world music style, ethnic fusion, diverse traditional instruments, cinematic atmosphere',
+};
+
+// Emotion → BPM + Key auto-mapping (MiniMax 2.6 matches BPM/Key >99%)
+const MOOD_MUSIC_PARAMS: Record<string, { keys: string[]; bpm: string }> = {
+  sorrow:      { keys: ['A minor', 'E minor', 'D minor'],          bpm: '60-75' },
+  joy:         { keys: ['C major', 'G major', 'D major'],          bpm: '100-130' },
+  peace:       { keys: ['D dorian', 'F major', 'C major'],         bpm: '50-70' },
+  nostalgia:   { keys: ['G major', 'E minor', 'A minor'],          bpm: '70-90' },
+  passion:     { keys: ['D minor', 'C minor', 'G minor'],          bpm: '100-140' },
+  mystery:     { keys: ['E phrygian', 'B minor', 'F minor'],       bpm: '50-70' },
+  warmth:      { keys: ['F major', 'C major', 'A major'],          bpm: '75-95' },
+  loneliness:  { keys: ['A minor', 'E minor', 'D minor'],          bpm: '50-65' },
+};
+
+const DURATION_SECONDS: Record<string, number> = {
+  short: 30,
+  medium: 60,
+  long: 120,
 };
 
 export const MOOD_LABELS: Record<string, string> = {
@@ -249,15 +275,24 @@ export async function generateMusic(text: string, options: MusicOptions = {}): P
 
   const isInstrumental = options.musicType !== 'song';
   const genreHint = options.musicGenre ? GENRE_STYLES[options.musicGenre] || '' : '';
-  const moodLabel = MOOD_LABELS[profile.mood] || profile.mood;
 
+  // Auto-map emotion → BPM + Key (MiniMax 2.6 matching rate >99%)
+  const musicParams = MOOD_MUSIC_PARAMS[profile.mood] || MOOD_MUSIC_PARAMS.peace;
+  const randomKey = musicParams.keys[Math.floor(Math.random() * musicParams.keys.length)];
+  const bpm = musicParams.bpm;
+
+  // Duration mapping
+  const durationSec = DURATION_SECONDS[options.duration || 'medium'] || 60;
+  const moodCN = MOOD_LABELS[profile.mood] || profile.mood;
+
+  // Build structured prompt with BPM/Key
   const prompt = [
-    `${moodLabel}${isInstrumental ? ' instrumental' : ' song'} in ${profile.style} style`,
-    `${profile.tempo} tempo`,
-    `featuring ${profile.instruments}`,
+    `${randomKey}, ${bpm} BPM`,
+    `${profile.style} style, ${moodCN}情绪`,
+    `${profile.tempo} tempo, ${profile.instruments}为主奏乐器`,
     genreHint,
-    isInstrumental ? 'no vocals, pure instrumental' : 'with emotional vocals in Chinese, lyrical',
-    'suitable for storytelling, 20 seconds duration',
+    isInstrumental ? '纯器乐无人声' : '中文深情演唱，歌词富有诗意和故事感',
+    `叙事配乐风格，${durationSec}秒时长`,
   ]
     .filter(Boolean)
     .join(', ');
@@ -275,8 +310,17 @@ export async function generateMusic(text: string, options: MusicOptions = {}): P
   };
 
   if (!isInstrumental) {
-    payload.lyrics = text.slice(0, 200);
+    // song_ai mode: let MiniMax auto-generate structured lyrics
+    if (options.lyricsMode !== 'story_as_lyrics') {
+      payload.lyrics_optimizer = true;
+    } else {
+      // story_as_lyrics: use truncated text directly as lyrics
+      payload.lyrics = text.slice(0, 300);
+    }
   }
+
+  // Longer timeout for longer music
+  const timeout = durationSec <= 60 ? 120000 : 180000;
 
   const response = await axios.post<MiniMaxMusicResponse>(
     `${process.env.MINIMAX_API_URL || 'https://api.minimaxi.com/v1'}/music_generation`,
@@ -286,7 +330,7 @@ export async function generateMusic(text: string, options: MusicOptions = {}): P
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      timeout: 120000, // 2 minutes for music generation
+      timeout,
     }
   );
 

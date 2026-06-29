@@ -46,7 +46,7 @@ router.post('/generate', authMiddleware, async (req: AuthRequest, res: Response)
   try {
     // lyricsMode: 'story_as_lyrics' → use story text directly as lyrics (author wrote it as lyrics)
     //             'ai_generated' (default) → AI extracts lyrics from story narrative
-    const { storyId, text, musicType, musicMood, musicGenre, lyricsMode } = req.body;
+    const { storyId, text, musicType, musicMood, musicGenre, lyricsMode, duration } = req.body;
     if (!storyId || !text) { res.status(400).json({ error: 'storyId and text are required' }); return; }
 
     const story = await dbGet<{ id: number; tone: string | null }>('SELECT id, tone FROM stories WHERE id = ?', [storyId]);
@@ -84,7 +84,7 @@ router.post('/generate', authMiddleware, async (req: AuthRequest, res: Response)
 
     // Step 2: AI analysis — only run when we actually need to create new music
     const effectiveMood = story.tone || musicMood || undefined;
-    const musicOptions: MusicOptions = { musicType, musicMood: effectiveMood, musicGenre };
+    const musicOptions: MusicOptions = { musicType, musicMood: effectiveMood, musicGenre, duration, lyricsMode };
     const styleLabel = (effectiveMood && MOOD_LABELS[effectiveMood]) ? MOOD_LABELS[effectiveMood] : analyzeEmotion(text).style;
 
     let effectiveText = text;

@@ -28,6 +28,7 @@ export function CreateStoryPage() {
   //   'song_as_lyrics'     → musicType=song, lyricsMode=story_as_lyrics
   const [musicMode, setMusicMode] = useState<'instrumental' | 'song_ai' | 'song_as_lyrics'>('instrumental');
   const [musicGenre, setMusicGenre] = useState('chinese_folk');
+  const [musicDuration, setMusicDuration] = useState<'short' | 'medium' | 'long'>('medium');
   const [searchParams] = useSearchParams();
 
   // Carry-over from photo inspiration page
@@ -101,6 +102,7 @@ export function CreateStoryPage() {
           const result = await apiService.generateMusic(story.id, story.content, {
             musicType,
             musicGenre,
+            duration: musicDuration,
             ...(musicType === 'song' ? { lyricsMode } : {}),
           });
           // Immediately sync the server-returned credit count into the store so both
@@ -272,7 +274,25 @@ export function CreateStoryPage() {
                     <option value="classical">{t('create.genre.classical')}</option>
                     <option value="pop">{t('create.genre.pop')}</option>
                     <option value="opera">{t('create.genre.opera')}</option>
+                    <option value="electronic">{t('create.genre.electronic')}</option>
+                    <option value="jazz">{t('create.genre.jazz')}</option>
+                    <option value="rock">{t('create.genre.rock')}</option>
+                    <option value="lofi">{t('create.genre.lofi')}</option>
+                    <option value="rnb">{t('create.genre.rnb')}</option>
+                    <option value="world">{t('create.genre.world')}</option>
                   </select>
+                </div>
+
+                <div className="music-option">
+                  <label>{t('create.duration')}</label>
+                  <div className="duration-group">
+                    {(['short', 'medium', 'long'] as const).map(d => (
+                      <label key={d} className={`duration-choice${musicDuration === d ? ' duration-choice--active' : ''}`}>
+                        <input type="radio" name="duration" value={d} checked={musicDuration === d} onChange={() => setMusicDuration(d)} />
+                        <span>{t('create.duration.' + d)}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
