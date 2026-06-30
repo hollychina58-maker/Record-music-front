@@ -16,6 +16,12 @@ router.get('/hero-image', async (_req, res: Response) => {
 // Generate new hero image (admin only)
 router.post('/hero-image/generate', authMiddleware, adminMiddleware, async (_req: AuthRequest, res: Response) => {
   try {
+    // Delete old R2 file before overwriting DB record
+    const old = await dbGet<{ value: string }>("SELECT value FROM site_config WHERE key = 'hero_image'");
+    if (old?.value) {
+      deleteFromR2(old.value).catch(err => console.error('[Hero] Old image delete failed:', err));
+    }
+
     const prompt = '中国水墨画风格，意境深远，留白构图，远山朦胧，云雾缭绕，松柏点缀，湖面如镜，一叶扁舟，墨色浓淡相宜，宣纸质感，适合文学网站首页横幅';
     const result = await generateCoverImage(prompt);
     const bucketKey = `hero/hero_${Date.now()}.png`;
