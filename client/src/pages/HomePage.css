@@ -282,6 +282,8 @@
 
 /* ===== Feed Filter (only-mine) ===== */
 .feed-filter {
+  position: relative;
+  z-index: 2;
   display: flex;
   justify-content: flex-end;
   padding: 0 20px 12px;
