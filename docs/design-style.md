@@ -765,3 +765,86 @@ input:focus, textarea:focus {
 - 横向滑动区(流派选择器)
 - 漂浮装饰元素
 - 页面过渡动画
+
+---
+
+## 🔍 设计增强实施审核（2026-06-30，commit b2a359e）
+
+对 P0/P1 实施逐项代码验证：
+
+### 验证结果
+
+| # | 功能 | 方案要求 | 实际代码 | 状态 |
+|:---|:---|:---|:---|:---|
+| P0 | 音乐可视化频谱柱 | 24 条频谱柱 + Web Audio API | ✅ `MusicPlayer.tsx:107-129` — fftSize 128、64 bins、24 bars、exponential scaling、requestAnimationFrame 驱动。实现质量高 |
+| P0 | 频谱柱 CSS | `--bar-height` + 墨色渐变 | ✅ `MusicPlayer.css:462-468` — `height: var(--bar-height)`, `linear-gradient(to top, --ink-faint, --ink-dark)`, `transition: height 0.08s linear` |
+| P0 | 背景墨渍随音乐律动 | `--music-intensity` CSS 变量驱动背景 | ❌ **变量设置但从未消费** — `MusicPlayer.tsx:126` 设置了 `--music-intensity` 在 `document.documentElement`，但全项目无任何 CSS 规则引用 `var(--music-intensity)`。背景墨渍不会响应音乐 |
+| P0 | 桌面 1600px+ 宽屏网格 | 1400px max + `auto-fill, minmax(360px, 1fr)` | ✅ `HomePage.css:756-762` — 正确实现 |
+| P0 | 桌面正常尺寸网格 | `auto-fill, minmax(320px, 1fr)` | ⚠️ 方案要求 `auto-fill` 自适应，实际用硬编码列数（1→2→3→auto-fill），效果一致但不够流畅 |
+| P1 | 移动端卡片错落 | odd rotate(-0.3deg) / even rotate(0.2deg) + 负 margin | ✅ `HomePage.css:765-794` — 完整实现，含 hover 时 `rotate(0deg)` 回正 |
+| P1 | 滚动渐显 | `useScrollReveal` Hook + `.reveal-on-scroll` | ❌ **Hook 已定义但从未使用** — `useScrollReveal.ts` 存在，`index.css:537-547` 有 `.reveal-on-scroll` 类，但**全项目无任何组件 import 或调用此 Hook**。滚动渐显不生效 |
+
+### 严重问题
+
+#### D1. `--music-intensity` 设置但从未消费 — 背景墨渍律动完全无效
+
+**文件**: [MusicPlayer.tsx:126](../client/src/components/MusicPlayer.tsx#L126)  
+**严重程度**: 🔴 功能缺失
+
+`MusicPlayer.tsx` 每帧正确计算平均音量并设置 CSS 变量，但全项目 grep `var(--music-intensity)` 返回零结果。
+
+**修复**：在 `index.css` 中添加响应规则——这是方案中描述的核心视觉效果：
+
+```css
+/* 背景墨渍随音乐律动 */
+.bg-ink-blob,
+.ink-blob {
+  transform: scale(calc(1 + var(--music-intensity, 0) * 0.25));
+  opacity: calc(0.06 + var(--music-intensity, 0) * 0.06);
+  transition: transform 0.15s linear, opacity 0.15s linear;
+}
+```
+
+#### D2. `useScrollReveal` Hook 未被任何组件使用 — 滚动渐显完全无效
+
+**文件**: [useScrollReveal.ts](../client/src/hooks/useScrollReveal.ts)  
+**严重程度**: 🔴 功能缺失
+
+Hook 代码质量良好（`IntersectionObserver` + `prefers-reduced-motion` 降级 + `rootMargin` 提前触发），但全项目 grep `useScrollReveal` 仅匹配到定义文件本身，无任何 import 语句。
+
+**修复**：在 `HomePage.tsx` 和 `StoryDetailPage.tsx` 中对核心内容区使用：
+
+```tsx
+// HomePage.tsx — 对故事卡片列表
+const revealRef = useScrollReveal<HTMLDivElement>();
+// ...
+<div ref={revealRef} className="feed-grid reveal-on-scroll">
+```
+
+### 中等发现
+
+#### D3. 可视化频谱柱默认隐藏 — 初始状态用户看不到
+
+**文件**: [MusicPlayer.css:449](../client/src/components/MusicPlayer.css#L449)  
+**建议**: `ink-player__viz` 默认 `display: none`，需要 `.ink-player__viz--active` 才显示。确认 `MusicPlayer.tsx` 中 `isPlaying` 时正确添加了 `--active` 类（从代码结构看应该正确，但 CSS 中 `--active` 类切换逻辑封装在组件中，建议在 JSX 中确认）。
+
+#### D4. 桌面普通尺寸用硬编码列数而非 auto-fill
+
+**文件**: [HomePage.css:549](../client/src/pages/HomePage.css#L549)  
+**建议**: `@media (min-width: 960px)` 使用 `repeat(3, 1fr)` 硬编码。如果未来卡片内容宽度变化，需手动调列数。改用 `repeat(auto-fill, minmax(300px, 1fr))` 可自适应——但当前硬编码效果一致，优先级低。
+
+### 验证总结
+
+| 等级 | 数量 | 问题 |
+|:---|:---:|:---|
+| 🔴 功能缺失 | 2 | `--music-intensity` 未消费、`useScrollReveal` 未使用 |
+| 🟡 建议 | 2 | 可视化默认隐藏确认、网格 auto-fill |
+| ✅ 正确 | 4 | 频谱柱、宽屏网格、卡片错落、CSS 基础类 |
+
+**总体评价**：代码实现质量良好——频谱柱算法、卡片错落 CSS、滚动渐显 Hook 的 `prefers-reduced-motion` 降级都写得很专业。但两个关键功能的"最后一公里"没有接通：`--music-intensity` 变量设置后没有 CSS 消费方，`useScrollReveal` Hook 写好后没有组件调用。**修改量很小（约 10 行 CSS + 2 行 import），但视觉影响很大。**
+
+### 实施验证修复（commit 2e51569）
+
+**D1 `--music-intensity` 未消费 → ✅ 已修复**：`index.css` .ink-blob 规则消费 `--music-intensity`，scale(1+0.25) + opacity(0.06+0.06) 随音乐律动。
+
+**D2 useScrollReveal 未使用 → ✅ 已修复**：HomePage 故事卡片网格挂载 `revealRef` + `reveal-on-scroll` 类。
