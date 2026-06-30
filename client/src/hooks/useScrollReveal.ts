@@ -1,28 +1,29 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 
-export function useScrollReveal<T extends HTMLElement>(threshold = 0.15) {
-  const ref = useRef<T>(null);
-
+/** Observe a group of elements by CSS selector — each triggers .is-visible on scroll */
+export function useScrollReveal(selector: string, threshold = 0.1) {
   useEffect(() => {
-    const el = ref.current;
-    if (!el || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      if (el) el.style.opacity = '1';
+    const els = document.querySelectorAll<HTMLElement>(selector);
+    if (!els.length) return;
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      els.forEach(el => el.classList.add('is-visible'));
       return;
     }
 
     const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('is-visible');
-          observer.unobserve(entry.target);
-        }
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            observer.unobserve(entry.target);
+          }
+        });
       },
       { threshold, rootMargin: '0px 0px -30px 0px' },
     );
 
-    observer.observe(el);
+    els.forEach(el => observer.observe(el));
     return () => observer.disconnect();
-  }, [threshold]);
-
-  return ref;
+  }, [selector, threshold]);
 }
