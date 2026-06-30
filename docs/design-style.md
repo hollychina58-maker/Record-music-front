@@ -879,4 +879,18 @@ const revealRef = useScrollReveal<HTMLDivElement>();
 
 ### D5 粒度优化（commit 366c659）
 
-**D5 滚动渐显粒度偏粗 → ✅ 已优化**：给每张卡片 `style={{ transitionDelay: ${0.08 * i}s }}`，配合 `reveal-on-scroll` 的 transition 实现逐张渐显 stagger 效果。
+**D5 滚动渐显粒度偏粗 → ⚠️ 修复方式有误**
+
+开发者添加了 `style={{ transitionDelay: \`${0.08 * i}s\` }}`。但存在两个问题：
+
+1. **`transitionDelay` 不影响 `animation`**：`.story-card` 的入场效果由 `animation: cardReveal 0.6s`（CSS keyframes）驱动，而非 CSS `transition`。`transitionDelay` 只对 `transition` 属性生效，对 `animation` 无效。因此逐张渐显的 stagger 效果并未生效。
+
+2. **副作用：延迟了 hover 效果**：`.story-card` 有 `transition: transform 0.35s, box-shadow 0.35s`（hover 上浮动效）。`transitionDelay` 会让靠后的卡片 hover 响应变慢——第 20 张卡片的 hover 延迟 1.52 秒才能触发。
+
+**正确做法**：`animationDelay`（已存在）负责 stagger，`transitionDelay` 应移除。滚动时的逐张亮相需要通过 `IntersectionObserver` 监听每张卡片（而非整个 grid 容器），或使用 `animation-play-state: paused → running` 切换。
+
+**影响评估**：🟡 中。页面首屏加载时 stagger 正常（`animationDelay` 已生效），滚动后卡片无逐张亮相但功能完整。hover 延迟问题仅在列表末尾卡片上可感知。建议移除 `transitionDelay`，`animationDelay` 保留即可。
+
+### D5 修正（commit a8de116）
+
+审核者指出 `transitionDelay` 不影响 `animation` 且延迟 hover 响应。确认移除，`animationDelay` 已正确驱动首屏 stagger。
