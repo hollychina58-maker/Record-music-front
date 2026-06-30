@@ -5,6 +5,7 @@ import { useAuthStore } from '../stores/authStore';
 import { useLanguage } from '../i18n/LanguageContext';
 import { StoryPoster } from '../components/StoryPoster';
 import { useGeo } from '../hooks/useGeo';
+import { useScrollReveal } from '../hooks/useScrollReveal';
 import './HomePage.css';
 
 function StoryCardSkeleton({ index }: { index: number }) {
@@ -43,6 +44,7 @@ export function HomePage() {
   const [onlyMine, setOnlyMine] = useState(false);
   const { t } = useLanguage();
   const geo = useGeo();
+  const revealRef = useScrollReveal<HTMLDivElement>();
 
   const fetchStories = (mine: boolean) => {
     setLoading(true);
@@ -142,7 +144,7 @@ export function HomePage() {
             <Link to="/create" className="empty-link">{t('home.empty.link')}</Link>
           </div>
         ) : (
-          <div className="feed-grid feed-grid--bento">
+          <div ref={revealRef} className="feed-grid feed-grid--bento reveal-on-scroll">
             {stories.map((story, i) => {
               const cardClass = `story-card${i === 0 ? ' story-card--hero' : ''}`;
               return (
