@@ -931,8 +931,119 @@ const revealRef = useScrollReveal<HTMLDivElement>();
 
 审核者指出 `transitionDelay` 不影响 `animation` 且延迟 hover 响应。确认移除，`animationDelay` 已正确驱动首屏 stagger。
 
-### 开发者回复：animation-play-state paused 方案不可行
+### 开发者回复：animation-play-state paused 方案不可行 → ✅ 反驳成立
 
-审核者建议的 `animation-play-state: paused` + `reveal-on-scroll.is-visible .story-card { running }` 方案会导致首页卡片不可见——`cardReveal` 的 `animation-fill-mode: both` 在 paused 状态下应用 `from` 关键帧（opacity: 0, translateY(32px)），卡片在进入视口前完全不可见。
+开发者正确指出：`animation-fill-mode: both` 在 `paused` 状态下会应用 `from` 关键帧（`opacity: 0; transform: translateY(32px)`），导致折叠线以下卡片在滚动到之前完全不可见——这违背了"卡片内容始终可读"的基本要求。
 
-当前方案（`cardReveal` + `animationDelay` stagger）已正确处理首屏逐张亮相。滚动渐显需每张卡片独立 IntersectionObserver，归入 P2 后续迭代。
+当前方案已正确处理：
+- **首屏 stagger** ✅：`cardReveal` + `animationDelay` 在页面加载时逐张亮相
+- **非首屏内容** ✅：动画在 mount 时完成，卡片以完全可见状态等待滚动
+- **滚动触发 stagger**：需每张卡片独立 IntersectionObserver，属 P2 增强特性
+
+**AI 审核结论**：开发者反驳成立，撤回 `animation-play-state: paused` 建议。`useScrollReveal` 当前为预留 Hook（无副作用），滚动触发 stagger 归入 P2。
+
+---
+
+### 🔴 滚动渐显效果缺失 — 最终方案（2026-06-30）
+
+用户确认：桌面端打开首页，故事卡片没有随滚动渐显的动态效果。
+
+**现状确认**：
+- 首屏卡片 ✅：`cardReveal` + `animationDelay` 逐张亮相
+- 非首屏卡片 ❌：动画在页面加载时就已完成，滚动过去时卡片已静止
+- `useScrollReveal` Hook ✅ 存在但无 CSS 连接（grid 无 `reveal-on-scroll` 类）
+
+**之前方案的困境**：`animation-play-state: paused` 方案被否决（`fill-mode: both` + paused 导致内容不可见）。
+
+**最终可行方案**：放弃 CSS `animation`（keyframes），改用 CSS `transition` + 自定义属性 + 单个 `IntersectionObserver`。
+
+#### 原理
+
+不做"所有卡片一次性动画"，而是**每张卡片独立触发 transition**：卡片默认 `opacity: 0; translateY(24px)`，滚动进入视口时通过 `IntersectionObserver` 添加 `is-visible` 类，transition 到 `opacity: 1; translateY(0)`。每张卡片的 delay 通过 CSS 自定义属性 `--reveal-delay` 注入。`.is-visible` 触发后重置 transition（去掉 reveal delay），hover 效果不受影响。
+
+#### 改动清单（3 个文件，~40 行）
+
+**1. HomePage.tsx** — 卡片加 `reveal-on-scroll` 类 + `--reveal-delay` 变量
+
+```tsx
+// 每张卡片
+<div
+  className={`story-card reveal-on-scroll${i === 0 ? ' story-card--hero' : ''}`}
+  style={{ '--reveal-delay': `${i * 0.06}s` } as React.CSSProperties}
+>
+```
+
+**2. HomePage.css** — 替换 animation 为 transition
+
+```css
+.story-card {
+  /* 删除: animation: cardReveal 0.6s ... */
+  /* 改为 transition + 初始隐藏 */
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.5s var(--ease-out-expo) var(--reveal-delay, 0s),
+              transform 0.5s var(--ease-out-expo) var(--reveal-delay, 0s),
+              box-shadow 0.35s var(--ease-out-expo);
+}
+
+.story-card.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+  /* 重置 transition — 去掉 reveal delay，hover 即时响应 */
+  transition: opacity 0.3s var(--ease-out-expo),
+              transform 0.35s var(--ease-out-expo),
+              box-shadow 0.35s var(--ease-out-expo);
+}
+```
+
+**3. useScrollReveal.ts** — 改为监听 css class 选择器（一组元素）
+
+```typescript
+export function useScrollReveal(className: string, threshold = 0.1) {
+  useEffect(() => {
+    const els = document.querySelectorAll<HTMLElement>(className);
+    if (!els.length || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      els.forEach(el => el.style.opacity = '1');
+      return;
+    }
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold, rootMargin: '0px 0px -30px 0px' });
+    els.forEach(el => observer.observe(el));
+    return () => observer.disconnect();
+  }, [className]);
+}
+```
+
+调用方式：`useScrollReveal('.story-card.reveal-on-scroll')` —— 不依赖 ref，直接通过选择器批量监听。
+
+#### 效果
+
+- 页面加载 → 卡片 `opacity: 0; translateY(24px)`（不可见但占据布局空间——**内容始终可读**）
+- 用户滚动 → 卡片进入视口 → `IntersectionObserver` 添加 `is-visible`
+- CSS transition 启动 → 卡片在 `--reveal-delay * i` 秒后淡入上浮
+- `.is-visible` 重置 transition → hover 效果即时响应（无延迟副作用）
+- 用户继续滚动 → 后续卡片依次触发
+
+#### 与之前 animation 方案的关键区别
+
+| | animation 方案（当前） | transition 方案（建议） |
+|:---|:---|:---|
+| 首屏卡片 | ✅ stagger 逐张亮相 | ✅ stagger 逐张亮相 |
+| 非首屏卡片 | ❌ 已结束动画，无效果 | ✅ 滚动到才触发 |
+| 折叠线下内容可见性 | ✅ 始终可见 | ✅ 始终可见（占据布局空间） |
+| hover 延迟副作用 | 无 | ✅ 无（is-visible 后重置） |
+
+### 滚动渐显实施（commit 230584d）
+
+采用 transition 方案替代 animation：
+- `useScrollReveal` 改为接收 CSS 选择器，批量监听元素
+- 每张卡片 `reveal-on-scroll` + `--reveal-delay` stagger
+- `.story-card` 用 `opacity: 0; transform: translateY(24px)` + transition（不用 animation-fill-mode: both paused）
+- `.is-visible` 触发 transition 到 `opacity: 1; translateY(0)`，同时重置 delay 确保 hover 即时
+- 首屏卡片 IntersectionObserver 立即触发（同步 fire），无闪现
