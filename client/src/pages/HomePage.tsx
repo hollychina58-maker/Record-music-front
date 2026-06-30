@@ -144,7 +144,7 @@ export function HomePage() {
             <Link to="/create" className="empty-link">{t('home.empty.link')}</Link>
           </div>
         ) : (
-          <div ref={revealGridRef} className="feed-grid feed-grid--bento reveal-on-scroll">
+          <div ref={revealGridRef} className="feed-grid feed-grid--bento">
             {stories.map((story, i) => {
               const cardClass = `story-card${i === 0 ? ' story-card--hero' : ''}`;
               return (
