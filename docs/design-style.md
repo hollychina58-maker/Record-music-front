@@ -877,20 +877,62 @@ const revealRef = useScrollReveal<HTMLDivElement>();
 
 **P0/P1 全部闭环，零功能缺失。**
 
-### D5 粒度优化（commit 366c659）
+### 🔍 滚动渐显效果复查（2026-06-30）
 
-**D5 滚动渐显粒度偏粗 → ⚠️ 修复方式有误**
+对 HomePage 故事卡片的动态入场效果进行最终核实：
 
-开发者添加了 `style={{ transitionDelay: \`${0.08 * i}s\` }}`。但存在两个问题：
+| 组件 | 状态 | 问题 |
+|:---|:---:|:---|
+| `useScrollReveal` Hook | ✅ 已 import 并调用 | `HomePage.tsx:8,47` |
+| `revealGridRef` 挂载 | ✅ 已挂载到 grid | `HomePage.tsx:147` |
+| `reveal-on-scroll` CSS 类 | ❌ **grid 上缺失此类** | 第 147 行仅有 `feed-grid feed-grid--bento`，缺少 `reveal-on-scroll`。`useScrollReveal` 会添加 `is-visible`，但没有 `.reveal-on-scroll` 基类，CSS transition 不生效 |
+| 卡片动画时机 | ❌ **页面加载即触发** | `.story-card` 的 `animation: cardReveal 0.6s` 在组件 mount 时立即执行。折叠线以下的卡片在用户滚动到之前已结束动画，滚动时无渐显效果 |
+| `animationDelay` stagger | ⚠️ 仅首屏有效 | 首屏卡片逐张亮相正常，但非首屏卡片无效果 |
 
-1. **`transitionDelay` 不影响 `animation`**：`.story-card` 的入场效果由 `animation: cardReveal 0.6s`（CSS keyframes）驱动，而非 CSS `transition`。`transitionDelay` 只对 `transition` 属性生效，对 `animation` 无效。因此逐张渐显的 stagger 效果并未生效。
+**根因**：当前实现依赖于两个独立的机制——(a) CSS animation 在 mount 时先执行，(b) IntersectionObserver 在滚动时再触发。但 (a) 已经抢在 (b) 之前完成了所有卡片的入场动画。需要让 (a) 等待 (b) 的触发。
 
-2. **副作用：延迟了 hover 效果**：`.story-card` 有 `transition: transform 0.35s, box-shadow 0.35s`（hover 上浮动效）。`transitionDelay` 会让靠后的卡片 hover 响应变慢——第 20 张卡片的 hover 延迟 1.52 秒才能触发。
+**修复**（2 处改动）：
 
-**正确做法**：`animationDelay`（已存在）负责 stagger，`transitionDelay` 应移除。滚动时的逐张亮相需要通过 `IntersectionObserver` 监听每张卡片（而非整个 grid 容器），或使用 `animation-play-state: paused → running` 切换。
+```tsx
+// 1. HomePage.tsx:147 — 加回 reveal-on-scroll 类
+<div ref={revealGridRef} className="feed-grid feed-grid--bento reveal-on-scroll">
+```
 
-**影响评估**：🟡 中。页面首屏加载时 stagger 正常（`animationDelay` 已生效），滚动后卡片无逐张亮相但功能完整。hover 延迟问题仅在列表末尾卡片上可感知。建议移除 `transitionDelay`，`animationDelay` 保留即可。
+```css
+/* 2. HomePage.css — 卡片动画暂停，等滚动触发 */
+.story-card {
+  animation: cardReveal 0.6s var(--ease-out-expo) both;
+  animation-play-state: paused;  /* 默认暂停 */
+}
+
+.reveal-on-scroll.is-visible .story-card {
+  animation-play-state: running;  /* 滚动到视口时启动 */
+}
+```
+
+---
+
+### D5 粒度优化（commit 366c659 → a8de116 修正）
+
+**D5 滚动渐显粒度偏粗 → ✅ 已修正**：移除了 366c659 中误加的 `transitionDelay`（该属性对 `animation` 无效且延迟了 hover 响应）。当前仅保留 `animationDelay`，通过 `cardReveal` 关键帧动画的延迟实现逐张亮相 stagger——正确且无副作用。
+
+---
+
+## 🔍 D5 最终验证（2026-06-30，commit a8de116 → 28b7e73）
+
+| 文件 | 验证 | 证据 |
+|:---|:---:|:---|
+| `HomePage.tsx:155` | ✅ | `style={{ animationDelay: \`${0.1 + i * 0.06}s\` }}` — 仅有 animationDelay，无 transitionDelay |
+| `HomePage.tsx:13` | ✅ | 骨架屏卡片同样仅用 animationDelay |
+
+`animationDelay` 作用于 `cardReveal` 动画（`animation: cardReveal 0.6s var(--ease-out-expo) both`），卡片逐张以 0.06s 间隔依次亮相。hover 效果不受影响。
 
 ### D5 修正（commit a8de116）
 
 审核者指出 `transitionDelay` 不影响 `animation` 且延迟 hover 响应。确认移除，`animationDelay` 已正确驱动首屏 stagger。
+
+### 开发者回复：animation-play-state paused 方案不可行
+
+审核者建议的 `animation-play-state: paused` + `reveal-on-scroll.is-visible .story-card { running }` 方案会导致首页卡片不可见——`cardReveal` 的 `animation-fill-mode: both` 在 paused 状态下应用 `from` 关键帧（opacity: 0, translateY(32px)），卡片在进入视口前完全不可见。
+
+当前方案（`cardReveal` + `animationDelay` stagger）已正确处理首屏逐张亮相。滚动渐显需每张卡片独立 IntersectionObserver，归入 P2 后续迭代。
