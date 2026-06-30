@@ -87,7 +87,7 @@
 /* Brand wordmark */
 .nav-brand {
   font-family: var(--font-ink);
-  font-size: 1.05rem;
+  font-size: 1.2rem;
   font-weight: var(--font-weight-semibold);
   color: var(--gold-pale);
   text-decoration: none;
@@ -108,11 +108,11 @@
 }
 
 .nav-link {
-  padding: 5px 14px;
+  padding: 6px 16px;
   color: rgba(255, 255, 255, 0.55);
   text-decoration: none;
   font-family: var(--font-ui);
-  font-size: var(--text-xs);
+  font-size: var(--text-sm);
   font-weight: var(--font-weight-normal);
   letter-spacing: 0.04em;
   border-radius: var(--radius-sm);
@@ -198,23 +198,24 @@
 
 @media (max-width: 640px) {
   .global-nav-inner {
-    padding: 0 var(--space-3);
+    padding: 0 var(--space-2);
   }
 
   .nav-brand {
-    font-size: 0.95rem;
-    letter-spacing: 0.06em;
+    font-size: 1rem;
+    letter-spacing: 0.04em;
   }
 
-  /* Nav links — allow items to shrink, keep dropdown visible */
   .nav-links {
     gap: 0;
-    overflow: visible; /* must be visible so dropdown menu isn't clipped */
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    overflow: visible;
   }
 
   .nav-link {
-    padding: 5px 10px;
-    font-size: var(--text-2xs);
+    padding: 4px 8px;
+    font-size: var(--text-xs);
     flex-shrink: 0;
   }
 
@@ -223,8 +224,8 @@
   }
 
   .nav-logout-btn {
-    font-size: var(--text-2xs);
-    padding: 4px 8px;
+    font-size: var(--text-xs);
+    padding: 3px 8px;
     flex-shrink: 0;
   }
 }
