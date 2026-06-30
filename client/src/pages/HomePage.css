@@ -154,21 +154,9 @@
   overflow: hidden;
   background: var(--paper-white);
   box-shadow: 0 1px 4px rgba(28,28,28,0.04), 0 4px 16px rgba(28,28,28,0.04);
-  /* Scroll reveal via transition (not animation — avoids fill-mode paused opacity:0 bug) */
-  opacity: 0;
-  transform: translateY(24px);
-  transition: opacity 0.5s var(--ease-out-expo) var(--reveal-delay, 0s),
-              transform 0.5s var(--ease-out-expo) var(--reveal-delay, 0s),
+  transition: transform 0.35s var(--ease-out-expo),
               box-shadow 0.35s var(--ease-out-expo);
-}
-
-.story-card.is-visible {
-  opacity: 1;
-  transform: translateY(0);
-  /* Reset delay so hover is instant after reveal */
-  transition: opacity 0.3s var(--ease-out-expo),
-              transform 0.35s var(--ease-out-expo),
-              box-shadow 0.35s var(--ease-out-expo);
+  animation: cardReveal 0.6s var(--ease-out-expo) both;
 }
 
 .story-card:hover {

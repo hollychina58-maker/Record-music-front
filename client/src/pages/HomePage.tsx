@@ -5,7 +5,6 @@ import { useAuthStore } from '../stores/authStore';
 import { useLanguage } from '../i18n/LanguageContext';
 import { StoryPoster } from '../components/StoryPoster';
 import { useGeo } from '../hooks/useGeo';
-import { useScrollReveal } from '../hooks/useScrollReveal';
 import './HomePage.css';
 
 function StoryCardSkeleton({ index }: { index: number }) {
@@ -44,8 +43,6 @@ export function HomePage() {
   const [onlyMine, setOnlyMine] = useState(false);
   const { t } = useLanguage();
   const geo = useGeo();
-  useScrollReveal('.story-card.reveal-on-scroll');
-
   const fetchStories = (mine: boolean) => {
     setLoading(true);
     setLoadError(false);
@@ -146,13 +143,13 @@ export function HomePage() {
         ) : (
           <div className="feed-grid feed-grid--bento">
             {stories.map((story, i) => {
-              const cardClass = `story-card reveal-on-scroll${i === 0 ? ' story-card--hero' : ''}`;
+              const cardClass = `story-card${i === 0 ? ' story-card--hero' : ''}`;
               return (
                 <Link
                   key={story.id}
                   to={`/story/${story.id}`}
                   className={cardClass}
-                  style={{ '--reveal-delay': `${0.08 * i}s` } as React.CSSProperties}
+                  style={{ animationDelay: `${0.1 + i * 0.06}s` }}
                 >
                   {story.cover_image ? (
                     <div className="card-cover">
