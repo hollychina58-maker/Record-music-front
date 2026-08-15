@@ -25,7 +25,7 @@ interface Coupon {
   is_active: number;
 }
 
-const emptyProductForm = { name: '', type: 'monthly', price_yuan: '', music_limit: '', description: '' };
+const emptyProductForm = { name: '', type: 'monthly', price_usd: '', music_limit: '', description: '' };
 const emptyCouponForm = {
   code: '', discount_percent: '', discount_cents: '',
   valid_from: '', valid_until: '', max_uses: '',
@@ -68,14 +68,14 @@ export function AdminProductsPage() {
     setProductForm({
       name: p.name,
       type: p.type,
-      price_yuan: (p.price_cents / 100).toFixed(2),
+      price_usd: (p.price_cents / 100).toFixed(2),
       music_limit: p.music_limit != null ? String(p.music_limit) : '',
       description: p.description,
     });
   };
 
   const handleSaveProduct = async () => {
-    const priceCents = Math.round(parseFloat(productForm.price_yuan || '0') * 100);
+    const priceCents = Math.round(parseFloat(productForm.price_usd || '0') * 100);
     const musicLimit = productForm.music_limit ? parseInt(productForm.music_limit) : null;
     const payload = {
       name: productForm.name,
@@ -286,9 +286,9 @@ export function AdminProductsPage() {
               type="number"
               step="0.01"
               min="0"
-              value={productForm.price_yuan}
+              value={productForm.price_usd}
               placeholder="如 29.99"
-              onChange={(e) => setProductForm({ ...productForm, price_yuan: e.target.value })}
+              onChange={(e) => setProductForm({ ...productForm, price_usd: e.target.value })}
             />
             <label>音乐次数限制（留空=无限）</label>
             <input
