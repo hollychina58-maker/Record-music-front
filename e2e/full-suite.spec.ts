@@ -125,8 +125,11 @@ test.describe('02-Authorization', () => {
   test('comment ownership: user A cannot delete user B comment', async ({ request }) => {
     const add = await apiAddComment(request, S.storyByA.id, 'B的评论', S.userB.token);
     expect(add.status).toBe(201);
+    // 越权删除必须 403（此前只有 console.log，是永远通过的假安全测试）
     const del = await apiDeleteComment(request, S.userA.token, add.body.id);
-    console.log(`  Comment ownership: delete other → ${del.status}`);
+    expect(del.status).toBe(403);
+    // 清理：评论作者 B 删除自己的评论（顺带覆盖「作者可删自己评论」分支）
+    expect((await apiDeleteComment(request, S.userB.token, add.body.id)).status).toBe(200);
   });
 
   test('normal user → admin API → 403', async ({ request }) => {
@@ -216,11 +219,13 @@ test.describe('06-Music', () => {
     expect(r.status()).toBe(401);
   });
 
-  // MiniMax API generation test: skipped by default (requires API key)
-  test.skip('generate → 202 or 402', async ({ request }) => {
-    const r = await apiGenerateMusic(request, S.userA.token, S.storyByA.id, '配乐生成测试文本');
-    expect([202, 402]).toContain(r.status);
-    if (r.status === 202) expect(r.body.musicId).toBeGreaterThan(0);
+  // 生成音乐的所有权 IDOR：在他人的故事上生成必须 403（不依赖 MiniMax API）
+  test('generate on another user story → 403 (ownership IDOR)', async ({ request }) => {
+    const r = await request.post(`${API_URL}/api/music/generate`, {
+      headers: { Authorization: `Bearer ${S.userA.token}` },
+      data: { storyId: S.storyByB.id, text: '越权生成测试', musicType: 'instrumental' },
+    });
+    expect(r.status()).toBe(403);
   });
 });
 
@@ -245,11 +250,26 @@ test.describe('07-Security', () => {
     expect(fetched.body.content).toContain('<b>bold</b>');
   });
 
-  test('SQL injection title is handled safely', async ({ request }) => {
-    const r = await apiCreateStory(request, S.userA.token, `SQLI ${Date.now()}`, '正常正文满足最低字数验证要求通过检验。');
-    expect(r.status).toBe(201);
+  test('SQL injection payloads stored as literals, never executed', async ({ request }) => {
+    // 真实注入载荷：若参数化失效，这些会被执行（DROP/OR 1=1/注释符）
+    const payloads = [
+      "'; DROP TABLE users;--",
+      "' OR '1'='1",
+      "x' UNION SELECT password_hash FROM users--",
+      `SAFE ${Date.now()}`,
+    ];
+    for (const title of payloads) {
+      const r = await apiCreateStory(request, S.userA.token, title, '正常正文满足最低字数验证要求通过检验。');
+      expect(r.status).toBe(201);
+      // 原样存储（未被当作 SQL 执行）
+      const fetched = await apiGetStory(request, r.body.id);
+      expect(fetched.status).toBe(200);
+      expect(fetched.body.title).toBe(title);
+    }
+    // 注入未破坏数据：列表仍正常返回，且 users 表仍可正常登录
     const listRes = await request.get(`${API_URL}/api/story`);
     expect(listRes.status()).toBe(200);
+    expect((await apiLogin(request, EMAIL_A, PASSWORD)).status).toBe(200);
   });
 
   test('malformed auth → 401', async ({ request }) => {
@@ -403,17 +423,15 @@ test.describe('09-UI', () => {
     await expect(page.locator('.page-transition-enter')).toBeVisible({ timeout: 3000 });
   });
 
-  test('logout clears auth state in localStorage', async ({ page }) => {
-    await uiLoginFast(page, S.userB.token, S.userB.id, EMAIL_B);
-    expect(page.url()).toBe('http://localhost:5173/');
+  test('logout clears httpOnly session cookie', async ({ page }) => {
+    // 真实登录（走 httpOnly cookie 会话，而非注入 localStorage）
+    await uiLogin(page, EMAIL_B, PASSWORD);
+    let cookies = await page.context().cookies();
+    expect(cookies.some((c) => c.name === 'token')).toBe(true);
     await page.locator('.nav-logout-btn').click();
-    await page.waitForTimeout(500);
-    const stored = await page.evaluate(() => localStorage.getItem('auth-storage'));
-    if (stored) {
-      const p = JSON.parse(stored);
-      expect(p.state?.token).toBeFalsy();
-      expect(p.state?.isAuthenticated).toBeFalsy();
-    }
+    await page.waitForTimeout(800);
+    cookies = await page.context().cookies();
+    expect(cookies.some((c) => c.name === 'token')).toBe(false);
   });
 
   test('default page shows brand name', async ({ page }) => {

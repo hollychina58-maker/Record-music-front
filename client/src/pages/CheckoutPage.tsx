@@ -373,6 +373,34 @@ export function CheckoutPage() {
   };
 
   // ─────────────────────────────────────────────────────────────────────────────
+  // 从支付网关重定向返回（?order= 无 ?product=）：product 尚未加载，
+  // 不能永久显示 loading（否则吞掉验证失败的错误）。渲染验证结果视图。
+  if (!product && returnOrderId) {
+    const retryVerify = () => {
+      processedReturnRef.current = null;
+      setError('');
+      setStatusMsg(t('checkout.processing'));
+      verifyAndActivate(returnOrderId);
+    };
+    return (
+      <div className="checkout-page">
+        <main className="checkout-content">
+          {statusMsg && <div className="payment-status">{statusMsg}</div>}
+          {error && <p className="payment-error">{error}</p>}
+          {!statusMsg && !error && <div className="loading">{t('checkout.processing')}</div>}
+          <div className="checkout-actions">
+            {error && (
+              <button className="checkout-btn" onClick={retryVerify}>{t('common.retry')}</button>
+            )}
+            <button className="checkout-btn checkout-btn--ghost" onClick={() => navigate('/my-space')}>
+              {t('common.back')}
+            </button>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   if (loading || !product) {
     return (
       <div className="checkout-page">
