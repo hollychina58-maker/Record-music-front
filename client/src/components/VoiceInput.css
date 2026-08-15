@@ -1,0 +1,54 @@
+﻿.voice-input {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.voice-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--ink-wash);
+  background: var(--paper-white);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-normal) var(--ease-out-expo);
+}
+
+.voice-btn:hover {
+  border-color: var(--ink-medium);
+  background: var(--paper-aged);
+}
+
+.voice-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.voice-btn.listening {
+  border-color: var(--ink-dark);
+  background: var(--ink-black);
+}
+
+.voice-btn.listening .voice-icon {
+  color: var(--paper-white);
+}
+
+.voice-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--ink-dark);
+}
+
+.interim-text {
+  font-size: 0.875rem;
+  color: var(--ink-light);
+  font-style: italic;
+}
+
+.not-supported {
+  font-size: 0.75rem;
+  color: var(--ink-medium);
+}

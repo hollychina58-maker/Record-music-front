@@ -1,0 +1,275 @@
+/* 3-12: admin theme variables — mapped to the ink-wash palette (styles/theme.css) */
+.admin-table-page {
+  --admin-bg: var(--xuan-paper, var(--admin-bg));
+  --admin-surface: var(--paper, var(--admin-surface));
+  --admin-border: var(--ink-wash, var(--admin-border));
+  --admin-border-light: var(--admin-border-light);
+  --admin-text: var(--ink-black, var(--admin-text));
+  --admin-text-dim: var(--ink-faint, var(--admin-text-dim));
+  --admin-accent: var(--seal-red, var(--admin-accent));
+  --admin-row-hover: var(--admin-row-hover);
+}
+
+.admin-table-page {
+  max-width: 1100px;
+}
+
+.admin-search {
+  width: 100%;
+  max-width: 400px;
+  padding: 8px 14px;
+  border: 1px solid var(--admin-border);
+  border-radius: 2px;
+  font-size: 0.85rem;
+  background: var(--admin-bg);
+  outline: none;
+  font-family: inherit;
+  color: var(--admin-text);
+  transition: border-color 0.2s;
+}
+
+.admin-search:focus {
+  border-color: var(--admin-accent);
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--admin-surface);
+  border-radius: 2px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03), 0 4px 16px rgba(0,0,0,0.04);
+}
+
+.admin-table th {
+  background: var(--admin-bg);
+  padding: 12px 14px;
+  text-align: left;
+  font-size: 0.78rem;
+  color: var(--admin-text-dim);
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--admin-border-light);
+}
+
+.admin-table td {
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  color: var(--ink-medium);
+  border-bottom: 1px solid var(--xuan-paper);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.td-title { max-width: 240px !important; }
+.td-content { max-width: 300px !important; }
+
+.td-empty {
+  text-align: center;
+  color: var(--ink-faint) !important;
+  padding: 32px !important;
+}
+
+.td-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.admin-btn {
+  padding: 5px 14px;
+  border: 1px solid var(--ink-faint);
+  border-radius: 2px;
+  background: var(--admin-surface);
+  color: var(--ink-medium);
+  font-size: 0.78rem;
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: 0.04em;
+  transition: all 0.2s;
+}
+
+.admin-btn:hover { border-color: var(--admin-text); color: var(--admin-text); }
+
+.admin-btn-sm { padding: 3px 10px; font-size: 0.72rem; }
+
+.admin-btn-danger { color: var(--seal-red); border-color: var(--seal-glow); }
+.admin-btn-danger:hover { background: var(--seal-red); color: var(--admin-surface); border-color: var(--seal-red); }
+
+.admin-btn-warn { color: var(--admin-accent); border-color: var(--gold-pale); }
+.admin-btn-warn:hover { background: var(--admin-accent); color: var(--admin-surface); border-color: var(--admin-accent); }
+
+.admin-btn-cancel { color: var(--admin-text-dim); }
+
+.admin-btn-add {
+  margin-top: 12px;
+  color: var(--admin-accent);
+  border-color: var(--admin-accent);
+}
+.admin-btn-add:hover { background: var(--admin-accent); color: var(--admin-surface); }
+
+.admin-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.admin-pagination button {
+  padding: 6px 16px;
+  border: 1px solid var(--ink-faint);
+  border-radius: 2px;
+  background: var(--admin-surface);
+  color: var(--ink-medium);
+  font-size: 0.8rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.admin-pagination button:hover:not(:disabled) { border-color: var(--admin-text); color: var(--admin-text); }
+.admin-pagination button:disabled { opacity: 0.4; cursor: default; }
+
+.page-info {
+  font-size: 0.82rem;
+  color: var(--admin-text-dim);
+  letter-spacing: 0.04em;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 2px;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+}
+
+.status-active { background: #e8f5e9; color: var(--color-success); }
+.status-banned { background: #fce4ec; color: var(--seal-red-dark); }
+
+.admin-loading {
+  display: flex;
+  justify-content: center;
+  padding: 60px 0;
+  font-family: "Noto Serif SC", serif;
+  font-size: 1rem;
+  color: var(--ink-faint);
+}
+
+.admin-section-title {
+  font-family: "Noto Serif SC", serif;
+  font-size: 1rem;
+  color: var(--ink-medium);
+  margin: 0 0 12px;
+  letter-spacing: 0.06em;
+}
+
+.admin-page-title {
+  font-family: "Noto Serif SC", serif;
+  font-size: 1.3rem;
+  font-weight: 400;
+  color: var(--admin-text);
+  margin: 0 0 28px;
+  letter-spacing: 0.08em;
+}
+
+.admin-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.admin-filter {
+  padding: 8px 14px;
+  border: 1px solid var(--admin-border);
+  border-radius: 2px;
+  font-size: 0.85rem;
+  background: var(--admin-bg);
+  outline: none;
+  font-family: inherit;
+  color: var(--admin-text);
+  cursor: pointer;
+}
+
+.admin-filter:focus { border-color: var(--admin-accent); }
+
+.status-completed { background: #e8f5e9; color: var(--color-success); }
+.status-pending { background: #fff3e0; color: var(--color-warning); }
+.status-cancelled { background: #f5f5f5; color: var(--ink-medium); }
+.status-refunded { background: #e8eaf6; color: var(--indigo); }
+.status-admin { background: #ede7f6; color: var(--indigo); }
+
+.row-burned { background: #fef9f9; }
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal {
+  background: var(--admin-surface);
+  border-radius: 2px;
+  padding: 28px 32px;
+  min-width: 340px;
+  max-width: 480px;
+  width: 90%;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+}
+
+.modal h3 {
+  font-family: "Noto Serif SC", serif;
+  font-size: 1rem;
+  color: var(--admin-text);
+  margin: 0 0 16px;
+  letter-spacing: 0.06em;
+}
+
+.modal label {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--ink-medium);
+  margin: 12px 0 4px;
+  letter-spacing: 0.04em;
+}
+
+.modal input,
+.modal select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--admin-border);
+  border-radius: 2px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  color: var(--admin-text);
+  background: var(--admin-bg);
+  outline: none;
+  box-sizing: border-box;
+}
+
+.modal input:focus { border-color: var(--admin-accent); }
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+  justify-content: flex-end;
+}
+
+.admin-error {
+  margin: 24px 0;
+  padding: 16px;
+  border-radius: 8px;
+  background: rgba(180, 60, 40, 0.08);
+  color: var(--seal-red-dark);
+  font-size: 0.9rem;
+  text-align: center;
+}

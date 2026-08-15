@@ -1,0 +1,61 @@
+/* LikeButton — 点赞按钮 */
+.like-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border: none;
+  background: transparent;
+  color: var(--ink-faint);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: color 0.25s, transform 0.2s;
+  font-family: inherit;
+  font-size: 0.8rem;
+}
+
+.like-btn:hover {
+  color: var(--seal-red-light);
+  transform: scale(1.08);
+}
+
+.like-btn:active {
+  transform: scale(0.94);
+}
+
+.like-btn--liked {
+  color: var(--seal-red);
+}
+
+.like-btn--liked:hover {
+  color: var(--seal-red-dark);
+}
+
+/* Guest like — redirects to login on click */
+.like-btn--guest {
+  opacity: 0.5;
+  cursor: pointer;
+}
+
+.like-btn--guest:hover {
+  opacity: 0.8;
+}
+
+.like-btn--disabled {
+  cursor: default;
+  color: var(--ink-faint);
+}
+
+.like-btn--disabled:hover {
+  transform: none;
+  color: var(--ink-faint);
+}
+
+.like-icon {
+  flex-shrink: 0;
+}
+
+.like-count {
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+}

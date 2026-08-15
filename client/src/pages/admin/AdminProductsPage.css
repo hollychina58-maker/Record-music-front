@@ -1,0 +1,63 @@
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal {
+  background: #fff;
+  padding: 28px 24px;
+  border-radius: 2px;
+  width: 420px;
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.12);
+}
+
+.modal h3 {
+  font-family: "Noto Serif SC", serif;
+  font-size: 1rem;
+  color: #1a1a1a;
+  margin: 0 0 16px;
+  letter-spacing: 0.06em;
+}
+
+.modal label {
+  display: block;
+  font-size: 0.78rem;
+  color: #888;
+  margin: 10px 0 4px;
+  letter-spacing: 0.04em;
+}
+
+.modal input,
+.modal select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #e0d8cc;
+  border-radius: 2px;
+  font-size: 0.85rem;
+  color: #1a1a1a;
+  background: #fafaf8;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.modal input:focus,
+.modal select:focus {
+  border-color: #c9a96e;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  justify-content: flex-end;
+}

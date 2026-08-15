@@ -1,0 +1,29 @@
+.lang-switcher {
+  margin-left: 8px;
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px solid var(--ink-dark);
+  border-radius: 2px;
+  color: var(--ink-medium);
+  font-size: 0.72rem;
+  font-family: inherit;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  appearance: auto;
+  outline: none;
+  transition: border-color 0.3s, color 0.3s;
+}
+
+.lang-switcher:hover {
+  border-color: var(--ink-medium);
+  color: var(--ink-light);
+}
+
+.lang-switcher:focus {
+  border-color: var(--seal-red);
+}
+
+[dir="rtl"] .lang-switcher {
+  margin-left: 0;
+  margin-right: 8px;
+}

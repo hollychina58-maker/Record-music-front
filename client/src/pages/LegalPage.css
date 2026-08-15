@@ -1,0 +1,24 @@
+/* Legal pages — minimal ink-wash prose */
+.legal-page {
+  max-width: var(--content-narrow);
+  margin: 0 auto;
+  padding: var(--space-12) var(--space-6) var(--space-24);
+}
+.legal-title {
+  font-family: var(--font-ink);
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  color: var(--ink-black);
+  margin: 0 0 var(--space-6);
+}
+.legal-body p {
+  font-size: var(--text-base);
+  line-height: 1.9;
+  color: var(--ink-dark);
+  margin: 0 0 var(--space-4);
+}
+.legal-note {
+  font-size: var(--text-sm);
+  color: var(--ink-light);
+  margin-top: var(--space-8);
+}

@@ -1,0 +1,443 @@
+/* 墨韵 InkRhyme - Design System v2 */
+/* Ink meets paper: calligraphy, tea stains, vermillion seals */
+/* Palette avoids AI-template warm-cream trap — every color anchored in the ink-wash world */
+
+@import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;400;600;700&family=ZCOOL+XiaoWei&family=Noto+Naskh+Arabic:wght@400;600&family=Noto+Sans:wght@300;400;600&display=swap');
+
+:root {
+  /* === Ink Palette === */
+  --ink-deepest: #0F0F0F;
+  --ink-deep: #141414;
+  --ink-black: #1C1C1C;
+  --ink-dark: #2E2E2E;
+  --ink-medium: #555555;
+  --ink-light: #6B6B6B;
+  --ink-wash: #B0A8A0;
+  --ink-faint: #C8C0B8;
+
+  /* === Paper Palette — anchored in Xuan paper (宣纸) reality === */
+  --xuan-paper: #F5F0E8;
+  --paper-white: #FAF8F5;
+  --paper-cream: #F2ECE2;
+  --paper-aged: #ebe7df;
+  --paper-warm: #f0ece4;
+  --paper-mist: rgba(246, 244, 239, 0.88);
+
+  /* === Page Background (primary surface) === */
+  --color-page: var(--xuan-paper);
+
+  /* === Tea-Stain (茶渍) — warm brown for hover / dividers / subtle warmth === */
+  --tea-stain: #8C6E4A;
+  --tea-stain-light: #A88B6C;
+
+  /* === Inkstone (砚台) — deep olive for secondary text / muted states === */
+  --inkstone: #3A3A2A;
+  --inkstone-light: #5A5A4A;
+
+  /* === Worm-Mark (蛀痕) — pale card background / hover states === */
+  --worm-mark: #E8E0D4;
+
+  /* === Accent: Vermillion Seal Red (印泥色) — more saturated, deliberate === */
+  --seal-red: #C23B2A;
+  --seal-red-light: #D9513F;
+  --seal-red-dark: #8B2418;
+  --seal-glow: rgba(194, 59, 42, 0.10);
+
+  /* === Accent: Indigo (secondary, for UI elements) === */
+  --indigo: #3a4f8b;
+  --indigo-light: #5b6faa;
+
+  /* === Gold (brand/nav accent, sparingly) === */
+  --gold-pale: #e4d8c0;
+  --gold-mid: #c9a96e;
+  --gold-warm: #b8955a;
+
+  /* === Legacy Ember/Flame (preserved for burn animation, etc.) === */
+  --ember-orange: #e85a2c;
+  --ember-red: #c43c26;
+  --ember-glow: #ff6b35;
+  --flame-yellow: #f5a623;
+  --flame-gold: #ffc107;
+
+  /* === Semantic === */
+  --color-success: #4a8b5e;
+  --color-warning: #c47a2e;
+  --color-danger: var(--seal-red);
+
+  /* === Typography === */
+  --font-ink: 'Noto Serif SC', 'Songti SC', 'SimSun', serif;
+  --font-display: 'Ma Shan Zheng', 'ZCOOL XiaoWei', cursive;
+  --font-seal: 'ZCOOL XiaoWei', serif;
+  --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans', sans-serif;
+
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Font Sizes */
+  --text-2xs: 0.688rem;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  --text-5xl: 2.75rem;
+  --text-6xl: 3.25rem;
+
+  /* === Spacing === */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+
+  /* === Border Radius === */
+  --radius-none: 0;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --radius-xl: 16px;
+  --radius-full: 999px;
+
+  /* === Shadows (tinted ink, never pure black) === */
+  --shadow-hairline: 0 0 0 1px rgba(15, 15, 15, 0.04);
+  --shadow-mist: 0 4px 20px rgba(15, 15, 15, 0.05);
+  --shadow-float: 0 12px 40px rgba(15, 15, 15, 0.10);
+  --shadow-card: 0 2px 8px rgba(15, 15, 15, 0.04), 0 8px 32px rgba(15, 15, 15, 0.06);
+  --shadow-card-hover: 0 4px 16px rgba(15, 15, 15, 0.06), 0 16px 48px rgba(15, 15, 15, 0.10);
+  --shadow-modal: 0 24px 80px rgba(15, 15, 15, 0.18);
+
+  /* Legacy shadow aliases (preserved for existing component CSS) */
+  --shadow-ink-light: 0 2px 8px rgba(26, 26, 26, 0.08);
+  --shadow-ink-medium: 0 6px 24px rgba(26, 26, 26, 0.15);
+  --shadow-ink-dark: 0 12px 48px rgba(26, 26, 26, 0.25);
+
+  /* === Transitions === */
+  --transition-fast: 150ms ease;
+  --transition-normal: 300ms ease;
+  --transition-slow: 500ms ease;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-drift: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* === Z-Index === */
+  --z-below: -1;
+  --z-base: 0;
+  --z-elevated: 1;
+  --z-dropdown: 10;
+  --z-sticky: 20;
+  --z-overlay: 30;
+  --z-modal: 40;
+  --z-toast: 50;
+
+  /* Legacy z-index aliases */
+  --z-smoke: -1;
+  --z-bg: 0;
+  --z-float: 100;
+
+  /* === Layout === */
+  --nav-height: 56px;
+  --content-max: 960px;
+  --content-max-editorial: 1200px;
+  --content-narrow: 680px;
+  --ease-bleed: cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+/* ============================================
+   KEYFRAME ANIMATIONS
+   ============================================ */
+
+@keyframes mistFloat {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.4;
+  }
+  25% {
+    transform: translate(15px, -20px) scale(1.05);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translate(-10px, -35px) scale(0.95);
+    opacity: 0.5;
+  }
+  75% {
+    transform: translate(20px, -15px) scale(1.08);
+    opacity: 0.55;
+  }
+}
+
+@keyframes inkMorph {
+  0%, 100% {
+    border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+    transform: translate(0, 0) rotate(0deg);
+  }
+  25% {
+    border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%;
+    transform: translate(20px, -10px) rotate(5deg);
+  }
+  50% {
+    border-radius: 50% 60% 30% 60% / 30% 40% 70% 60%;
+    transform: translate(-15px, 15px) rotate(-3deg);
+  }
+  75% {
+    border-radius: 40% 30% 60% 50% / 60% 40% 30% 50%;
+    transform: translate(10px, 20px) rotate(2deg);
+  }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInScale {
+  from { opacity: 0; transform: scale(0.94); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes inkSpread {
+  0% { transform: scale(0); opacity: 0.6; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+@keyframes ripple {
+  0% { transform: scale(0); opacity: 0.5; }
+  100% { transform: scale(4); opacity: 0; }
+}
+
+@keyframes floatGentle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 24px var(--seal-glow); }
+  50% { box-shadow: 0 0 48px rgba(184, 56, 42, 0.22); }
+}
+
+@keyframes waveform {
+  0%, 100% { height: 20%; }
+  50% { height: 100%; }
+}
+
+@keyframes smokeDrift {
+  0% { transform: translateX(-100%) translateY(0) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.12; }
+  90% { opacity: 0.12; }
+  100% { transform: translateX(100%) translateY(-50px) rotate(10deg); opacity: 0; }
+}
+
+@keyframes ashFloat {
+  0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(-150px) translateX(30px) rotate(180deg); opacity: 0; }
+}
+
+@keyframes inkReveal {
+  0% { clip-path: inset(0 100% 0 0); }
+  100% { clip-path: inset(0 0 0 0); }
+}
+
+@keyframes gradientFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes burnCreep {
+  0% { clip-path: polygon(0 100%, 100% 100%, 100% 100%, 0 100%); }
+  100% { clip-path: polygon(0 100%, 100% 100%, 100% 0%, 0 0%); }
+}
+
+@keyframes particleDrift {
+  0% { transform: translateY(0) scale(1); opacity: 0.7; }
+  100% { transform: translateY(-100vh) scale(0.1); opacity: 0; }
+}
+
+@keyframes revealLine {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* Ambient ink wash — slow drifting ink blobs */
+@keyframes inkDrift1 {
+  0%, 100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+  25% { transform: translate(3%, -2%) scale(1.06) rotate(1deg); }
+  50% { transform: translate(-2%, 3%) scale(0.95) rotate(-0.5deg); }
+  75% { transform: translate(-4%, -1%) scale(1.04) rotate(0.5deg); }
+}
+@keyframes inkDrift2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(-4%, 2%) scale(1.08); }
+  66% { transform: translate(3%, -3%) scale(0.93); }
+}
+@keyframes inkDrift3 {
+  0%, 100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+  50% { transform: translate(5%, -2%) scale(1.05) rotate(-1deg); }
+}
+
+/* Signature: ink drop bloom (hero entrance) */
+@keyframes inkDropBloom {
+  0% {
+    clip-path: circle(0% at 50% 50%);
+    opacity: 0;
+  }
+  30% {
+    clip-path: circle(4% at 50% 50%);
+    opacity: 1;
+  }
+  70% {
+    clip-path: circle(70% at 50% 50%);
+    opacity: 1;
+  }
+  100% {
+    clip-path: circle(150% at 50% 50%);
+    opacity: 1;
+  }
+}
+
+/* Scroll-triggered card reveal */
+@keyframes cardReveal {
+  from {
+    opacity: 0;
+    transform: translateY(32px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Ink bleed hover — border blur spread */
+@keyframes inkBleed {
+  0% { box-shadow: 0 0 0 0 rgba(28, 28, 28, 0); }
+  100% { box-shadow: 0 0 0 6px rgba(28, 28, 28, 0.04), 0 8px 32px rgba(28, 28, 28, 0.08); }
+}
+
+/* Tea stain spread (hover) */
+@keyframes stainSpread {
+  from { background-size: 0% 100%; }
+  to { background-size: 100% 100%; }
+}
+
+/* ============================================
+   GLOBAL STYLES
+   ============================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-ink);
+  color: var(--ink-black);
+  background: var(--color-page);
+  line-height: 1.7;
+  min-height: 100svh;
+  overflow-x: hidden;
+}
+
+/* Ink Wash Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, var(--ink-faint), var(--ink-wash));
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-light);
+}
+
+::selection {
+  background: rgba(15, 15, 15, 0.10);
+  color: var(--ink-deep);
+}
+
+:focus-visible {
+  outline: 2px solid var(--seal-red);
+  outline-offset: 2px;
+}
+
+/* ============================================
+   RESPONSIVE BREAKPOINTS
+   ============================================ */
+
+/* Tablet (≤1024px) */
+@media (max-width: 1024px) {
+  :root {
+    --content-max: 100%;
+    --content-max-editorial: 100%;
+  }
+}
+
+/* Mobile (≤640px) */
+@media (max-width: 640px) {
+  :root {
+    --nav-height: 44px;
+    --text-6xl: 2rem;
+    --text-5xl: 1.75rem;
+    --text-4xl: 1.5rem;
+    --text-3xl: 1.375rem;
+    --text-2xl: 1.25rem;
+    --text-xl: 1.125rem;
+    --text-lg: 1.0625rem;
+    --text-base: 1rem;
+    --text-sm: 0.9375rem;
+    --text-xs: 0.8125rem;
+    --space-16: 2rem;
+    --space-20: 2.5rem;
+    --space-24: 3rem;
+  }
+
+  /* Prevent iOS zoom on input focus */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

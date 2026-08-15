@@ -1,0 +1,545 @@
+/* ── Layout ──
+   暗色"安全交易空间"主题 — 已从紫蓝 AI 渐变改为 ink-wash 墨色系
+   (bg 用 ink 深色，点缀用 seal-red 与 gold) ── */
+.checkout-page {
+  min-height: 100svh;
+  background: linear-gradient(135deg, var(--ink-deepest) 0%, var(--ink-deep) 50%, var(--ink-black) 100%);
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 40px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 24px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.back-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  color: var(--gold-pale);
+  transition: background 0.2s;
+}
+.back-btn:hover { background: rgba(255, 255, 255, 0.12); }
+.back-icon { width: 20px; height: 20px; stroke: currentColor; }
+
+.page-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--paper-white);
+  margin: 0;
+}
+
+.checkout-content {
+  max-width: 520px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Plan detail card ── */
+.plan-detail-card {
+  background: linear-gradient(135deg, rgba(201, 169, 110, 0.16) 0%, rgba(201, 169, 110, 0.07) 100%);
+  border: 1px solid rgba(201, 169, 110, 0.32);
+  border-radius: 20px;
+  padding: 28px 24px;
+  position: relative;
+  overflow: hidden;
+}
+.plan-detail-card::before {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 160px;
+  height: 160px;
+  background: radial-gradient(circle, rgba(201, 169, 110, 0.14), transparent 70%);
+  pointer-events: none;
+}
+
+.plan-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.plan-badge {
+  display: inline-block;
+  background: linear-gradient(90deg, var(--seal-red), var(--seal-red-light));
+  color: var(--paper-white);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 5px 14px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+}
+
+.upgrade-tag {
+  background: rgba(201, 169, 110, 0.16);
+  border: 1px solid rgba(201, 169, 110, 0.4);
+  color: var(--gold-mid);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 10px;
+}
+
+.plan-price-display {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.plan-price-original {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.35);
+  text-decoration: line-through;
+}
+
+.plan-price-main {
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--paper-white);
+  line-height: 1;
+}
+
+.plan-price-unit {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.plan-description {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0 0 20px;
+  line-height: 1.5;
+}
+
+.plan-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.plan-feature-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.feature-icon {
+  font-size: 18px;
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.feature-text {
+  line-height: 1.4;
+}
+
+.plan-limit-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(201, 169, 110, 0.10);
+  border: 1px solid rgba(201, 169, 110, 0.22);
+  border-radius: 12px;
+  padding: 6px 16px;
+  font-size: 13px;
+  color: var(--gold-mid);
+  font-weight: 600;
+}
+
+/* ── Order section (quantity) ── */
+.order-section {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 16px 20px;
+}
+
+.order-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.order-label {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.qty-control {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.qty-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(201, 169, 110, 0.14);
+  border: 1px solid rgba(201, 169, 110, 0.35);
+  color: var(--gold-mid);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+.qty-btn:hover:not(:disabled) { background: rgba(201, 169, 110, 0.28); }
+.qty-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.qty-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--paper-white);
+  min-width: 28px;
+  text-align: center;
+}
+
+/* ── Coupon ── */
+.coupon-row {
+  display: flex;
+  gap: 10px;
+}
+
+.coupon-input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 14px;
+  color: var(--paper-white);
+  outline: none;
+  transition: border-color 0.2s;
+}
+.coupon-input::placeholder { color: rgba(255, 255, 255, 0.3); }
+.coupon-input:focus { border-color: rgba(201, 169, 110, 0.5); }
+
+/* ── Total ── */
+.checkout-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 14px 20px;
+  background: rgba(201, 169, 110, 0.07);
+  border: 1px solid rgba(201, 169, 110, 0.18);
+  border-radius: 14px;
+}
+
+.checkout-total-label {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.checkout-total-amount {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--paper-white);
+}
+
+/* ── Checkout button ── */
+.checkout-btn {
+  width: 100%;
+  padding: 16px;
+  border-radius: 16px;
+  border: none;
+  background: linear-gradient(135deg, var(--seal-red), var(--seal-red-light));
+  color: var(--paper-white);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: opacity 0.2s, transform 0.15s, background 0.3s;
+  letter-spacing: 0.4px;
+  min-height: 54px;
+}
+.checkout-btn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+.checkout-btn:active:not(:disabled) { transform: translateY(0); }
+.checkout-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Payment recap (step 2 summary) ── */
+.payment-recap {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+}
+
+.payment-recap-name {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.75);
+  font-weight: 600;
+}
+
+.payment-recap-amount {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--paper-white);
+}
+
+/* ── Payment method section ── */
+.payment-method { display: flex; flex-direction: column; gap: 12px; }
+
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.45);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0;
+}
+
+.provider-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.provider-option {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  position: relative;
+}
+.provider-option:hover { background: rgba(255, 255, 255, 0.08); }
+.provider-option--active { background: rgba(255, 255, 255, 0.08); }
+
+.provider-option input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.provider-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.provider-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--paper-white);
+  flex: 1;
+}
+
+.provider-check {
+  font-size: 18px;
+  font-weight: 700;
+  margin-left: auto;
+}
+
+.provider-option--disabled {
+  opacity: 0.45;
+  cursor: pointer;
+}
+
+.provider-option--disabled:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.provider-soon {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.5px;
+  margin-left: auto;
+}
+
+.unavailable-toast {
+  background: rgba(255, 200, 100, 0.12);
+  border: 1px solid rgba(255, 200, 100, 0.3);
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-size: 13px;
+  color: var(--gold-mid);
+  text-align: center;
+  animation: fadeInUp 0.2s ease;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.qr-cancel-btn {
+  margin-top: 4px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 13px;
+  padding: 8px 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.qr-cancel-btn:hover {
+  border-color: rgba(217, 81, 63, 0.4);
+  color: var(--seal-red-light);
+}
+
+/* ── Payment note ── */
+.payment-note {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.3);
+  text-align: center;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ── Status messages ── */
+.payment-status {
+  background: rgba(162, 155, 254, 0.12);
+  border: 1px solid rgba(201, 169, 110, 0.32);
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-size: 14px;
+  color: var(--gold-mid);
+  text-align: center;
+}
+
+.payment-error {
+  background: rgba(217, 81, 63, 0.1);
+  border: 1px solid rgba(217, 81, 63, 0.3);
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-size: 14px;
+  color: var(--seal-red-light);
+  text-align: center;
+  margin: 0;
+}
+
+/* ── QR section ── */
+.qr-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.qr-placeholder {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 320px;
+}
+
+.qr-provider-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 20px;
+  color: var(--paper-white);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.qr-image {
+  width: 200px;
+  height: 200px;
+  border-radius: 14px;
+  display: block;
+}
+
+.qr-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--paper-white);
+  margin: 0;
+}
+
+.qr-amount {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--gold-mid);
+  margin: 0;
+}
+
+.qr-hint {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.45);
+  text-align: center;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.qr-icon-wrap {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.qr-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(201, 169, 110, 0.2);
+  border-top-color: var(--gold-mid);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading {
+  color: rgba(255, 255, 255, 0.5);
+  text-align: center;
+  padding: 80px 20px;
+  font-size: 15px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 480px) {
+  .page-header { padding: 16px 16px 10px; }
+  .checkout-content { padding: 16px; gap: 16px; }
+  .plan-detail-card { padding: 22px 18px; }
+  .plan-price-main { font-size: 30px; }
+  .checkout-total-amount { font-size: 22px; }
+}
