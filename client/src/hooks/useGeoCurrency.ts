@@ -15,12 +15,16 @@ const USD_COUNTRIES = new Set([
   'JP', 'KR',
 ]);
 
+// 定价基准：1 美金 = 100 分（服务端 products.price_cents 为美金分）。
+// CNY 等其它货币按 1 USD 的汇率折算展示。
+const USD_TO_CNY_RATE = 7.2; // 1 USD ≈ 7.2 CNY
+
 export interface CurrencyInfo {
   code: 'CNY' | 'USD';
   symbol: '¥' | '$';
   loading: boolean;
-  /** Convert a price-cents value to display cents in the active currency */
-  toDisplayCents: (cnyCents: number) => number;
+  /** Convert a price-cents value (美金分) to display cents in the active currency */
+  toDisplayCents: (usdCents: number) => number;
   /** Format display cents to a user-facing price string (no symbol) */
   formatAmount: (displayCents: number) => string;
 }
@@ -33,9 +37,9 @@ export function useGeoCurrency(): CurrencyInfo {
     const code = isUSD ? 'USD' : 'CNY';
     const symbol = isUSD ? '$' : '¥';
 
-    // 统一按 1 美金计价：价格数字 1:1（¥10 → $10），不做汇率折算。
-    // 未来若接入其他货币（欧元/日元等），再按各自对 1 美金的汇率折算。
-    const toDisplayCents = (cnyCents: number) => cnyCents;
+    // 定价基准 1 美金：USD 国家 1:1 显示美金分，CNY 按汇率折算为人民币分。
+    const toDisplayCents = (usdCents: number) =>
+      isUSD ? usdCents : Math.round(usdCents * USD_TO_CNY_RATE);
 
     const formatAmount = (cents: number) => {
       if (isUSD) {

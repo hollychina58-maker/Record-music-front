@@ -193,7 +193,7 @@ export function AdminProductsPage() {
               <td>{p.id}</td>
               <td>{p.name}</td>
               <td>{typeLabel(p.type)}</td>
-              <td>¥{(p.price_cents / 100).toFixed(2)}</td>
+              <td>${(p.price_cents / 100).toFixed(2)}</td>
               <td>{p.music_limit === null ? '无限' : p.music_limit}</td>
               <td className="td-content">{p.description}</td>
               <td>
@@ -246,7 +246,7 @@ export function AdminProductsPage() {
               <td>{c.id}</td>
               <td><code>{c.code}</code></td>
               <td>{c.discount_percent ? `${c.discount_percent}%` : '-'}</td>
-              <td>{c.discount_cents ? `¥${(c.discount_cents / 100).toFixed(2)}` : '-'}</td>
+              <td>{c.discount_cents ? `$${(c.discount_cents / 100).toFixed(2)}` : '-'}</td>
               <td>{c.valid_from ? `${c.valid_from.slice(0, 10)} ~ ${c.valid_until?.slice(0, 10)}` : '永久'}</td>
               <td>{c.used_count}{c.max_uses ? ` / ${c.max_uses}` : ''}</td>
               <td className="td-actions">
@@ -281,7 +281,7 @@ export function AdminProductsPage() {
               <option value="monthly">月度会员</option>
               <option value="yearly">年度会员</option>
             </select>
-            <label>价格（元）</label>
+            <label>价格（美元）</label>
             <input
               type="number"
               step="0.01"
@@ -325,7 +325,7 @@ export function AdminProductsPage() {
               placeholder="如 20"
               onChange={(e) => setCouponForm({ ...couponForm, discount_percent: e.target.value })}
             />
-            <label>固定减免（元）</label>
+            <label>固定减免（美元）</label>
             <input
               type="number"
               step="0.01"
